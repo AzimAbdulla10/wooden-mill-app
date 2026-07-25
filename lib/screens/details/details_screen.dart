@@ -141,9 +141,8 @@ class _DetailsScreenState extends State<DetailsScreen> {
                 Card(
                   child: Padding(
                     padding: const EdgeInsets.all(12.0),
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerLeft,
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
                       child: DataTable(
                         columnSpacing: 20,
                         horizontalMargin: 8,
