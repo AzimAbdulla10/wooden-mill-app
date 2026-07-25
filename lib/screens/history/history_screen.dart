@@ -217,23 +217,29 @@ class _HistoryScreenState extends State<HistoryScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    children: [
-                      Icon(Icons.filter_list, size: 14, color: Colors.grey.shade600),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${order.numberOfLogs} ${order.numberOfLogs == 1 ? "Log" : "Logs"}',
-                        style: TextStyle(color: Colors.grey.shade700, fontSize: 13),
-                      ),
-                      const SizedBox(width: 12),
-                      Icon(Icons.layers_outlined, size: 14, color: Colors.grey.shade600),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${VolumeCalculator.formatVolume(order.totalVolume)} cft',
-                        style: TextStyle(color: Colors.grey.shade700, fontSize: 13),
-                      ),
-                    ],
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Icon(Icons.filter_list, size: 14, color: Colors.grey.shade600),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${order.numberOfLogs} ${order.numberOfLogs == 1 ? "Log" : "Logs"}',
+                          style: TextStyle(color: Colors.grey.shade700, fontSize: 13),
+                        ),
+                        const SizedBox(width: 12),
+                        Icon(Icons.layers_outlined, size: 14, color: Colors.grey.shade600),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            '${VolumeCalculator.formatVolume(order.totalVolume)} cft',
+                            style: TextStyle(color: Colors.grey.shade700, fontSize: 13),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
+                  const SizedBox(width: 8),
                   Text(
                     formattedDate,
                     style: TextStyle(color: Colors.grey.shade500, fontSize: 11),
