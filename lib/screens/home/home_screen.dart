@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:wooden_mill_app/core/constants/app_constants.dart';
 import 'package:wooden_mill_app/core/theme/shadcn_tokens.dart';
+import 'package:wooden_mill_app/core/utils/pdf_invoice_helper.dart';
 import 'package:wooden_mill_app/core/utils/responsive_layout.dart';
 import 'package:wooden_mill_app/core/utils/volume_calculator.dart';
 import 'package:wooden_mill_app/main.dart';
+import 'package:wooden_mill_app/models/order.dart';
+import 'package:wooden_mill_app/screens/details/details_screen.dart';
 import 'package:wooden_mill_app/screens/home/home_controller.dart';
 import 'package:wooden_mill_app/widgets/shad_badge.dart';
 import 'package:wooden_mill_app/widgets/shad_card.dart';
@@ -106,19 +109,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
       if (savedOrder != null) {
         _controller.clearForm();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Row(
-              children: [
-                Icon(Icons.check_circle_outline, color: Colors.white, size: 20),
-                SizedBox(width: 8),
-                Text('Order successfully saved to database!'),
-              ],
-            ),
-            backgroundColor: const Color(0xFF059669),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(ShadTokens.radiusSm)),
-          ),
+        
+        // Popup confirmed order receipt dialog with print & details actions
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => _PostSaveReceiptDialog(savedOrder: savedOrder),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -189,7 +185,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Phone Layout: Compact single-column workflow with sticky bottom summary bar
   Widget _buildPhoneLayout(ThemeData theme) {
     return Column(
       children: [
@@ -220,12 +215,10 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Tablet & Desktop Layout: Balanced 50% / 50% Two-Column Split
   Widget _buildBalancedTabletLayout(ThemeData theme) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Left Column (50% Flex Width): Customer Info, Wood Selection & Log Entries List
         Expanded(
           flex: 1,
           child: ListView(
@@ -248,7 +241,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         VerticalDivider(width: 1, thickness: 1, color: theme.colorScheme.outline),
-        // Right Column (50% Flex Width): Live Billing Summary & Save Action Button
         Expanded(
           flex: 1,
           child: Column(
@@ -737,6 +729,121 @@ class _ConfirmationDialog extends StatelessWidget {
         children: [
           Text(label, style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurfaceVariant)),
           Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+        ],
+      ),
+    );
+  }
+}
+
+class _PostSaveReceiptDialog extends StatelessWidget {
+  final OrderModel savedOrder;
+
+  const _PostSaveReceiptDialog({required this.savedOrder});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Dialog(
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 440),
+        padding: const EdgeInsets.all(ShadTokens.spaceXl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF059669).withValues(alpha: 0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.check_circle_outline, size: 24, color: Color(0xFF059669)),
+                ),
+                const SizedBox(width: 14),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'ORDER #${savedOrder.id ?? 1} CONFIRMED',
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: -0.2),
+                    ),
+                    Text(
+                      'Successfully saved to local database',
+                      style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const Divider(height: 28),
+            _buildInfoRow('Customer:', savedOrder.customerName, theme),
+            _buildInfoRow('Phone:', savedOrder.phone, theme),
+            _buildInfoRow('Wood Species:', savedOrder.woodType, theme),
+            _buildInfoRow('Total Logs:', '${savedOrder.numberOfLogs}', theme),
+            _buildInfoRow('Total Volume:', '${VolumeCalculator.formatVolume(savedOrder.totalVolume)} cft', theme),
+            const Divider(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Final Price Paid:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                Text(
+                  VolumeCalculator.formatCurrency(savedOrder.finalPrice),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: theme.colorScheme.primary),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      PdfInvoiceHelper.printOrderInvoice(context, savedOrder);
+                    },
+                    icon: const Icon(Icons.print_outlined, size: 16),
+                    label: const Text('PRINT RECEIPT'),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (context) => DetailsScreen(orderId: savedOrder.id!)),
+                      );
+                    },
+                    icon: const Icon(Icons.visibility_outlined, size: 16),
+                    label: const Text('VIEW DETAILS'),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('DONE / NEW ORDER'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value, ThemeData theme) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurfaceVariant)),
+          Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
         ],
       ),
     );

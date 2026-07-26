@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:wooden_mill_app/core/theme/shadcn_tokens.dart';
+import 'package:wooden_mill_app/core/utils/pdf_invoice_helper.dart';
 import 'package:wooden_mill_app/core/utils/volume_calculator.dart';
 import 'package:wooden_mill_app/main.dart';
 import 'package:wooden_mill_app/models/order.dart';
@@ -51,7 +52,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    final content = FutureBuilder<OrderModel?>(
+    return FutureBuilder<OrderModel?>(
       future: _orderFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -80,7 +81,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
 
         final formattedDate = DateFormat('dd MMMM yyyy, hh:mm a').format(order.dateTime);
 
-        return ListView(
+        final bodyContent = ListView(
           padding: const EdgeInsets.all(ShadTokens.spaceLg),
           children: [
             ShadCard(
@@ -106,6 +107,15 @@ class _DetailsScreenState extends State<DetailsScreen> {
             ShadCard(
               title: 'Log Dimensions Breakdown',
               description: '${order.logs.length} ${order.logs.length == 1 ? "log entry" : "log entries"} recorded',
+              action: OutlinedButton.icon(
+                onPressed: () => PdfInvoiceHelper.printOrderInvoice(context, order),
+                icon: const Icon(Icons.print_outlined, size: 16),
+                label: const Text('Print Receipt'),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  minimumSize: Size.zero,
+                ),
+              ),
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: DataTable(
@@ -192,32 +202,37 @@ class _DetailsScreenState extends State<DetailsScreen> {
             ),
           ],
         );
-      },
-    );
 
-    if (widget.isEmbedded) {
-      return content;
-    }
+        if (widget.isEmbedded) {
+          return bodyContent;
+        }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Order Details'),
-        actions: [
-          ListenableBuilder(
-            listenable: themeController,
-            builder: (context, _) {
-              final isDark = Theme.of(context).brightness == Brightness.dark;
-              return IconButton(
-                icon: Icon(isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined),
-                tooltip: isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode',
-                onPressed: () => themeController.toggleTheme(context),
-              );
-            },
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('Order Details'),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.print_outlined),
+                tooltip: 'Print Receipt (PDF)',
+                onPressed: () => PdfInvoiceHelper.printOrderInvoice(context, order),
+              ),
+              ListenableBuilder(
+                listenable: themeController,
+                builder: (context, _) {
+                  final isDark = Theme.of(context).brightness == Brightness.dark;
+                  return IconButton(
+                    icon: Icon(isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined),
+                    tooltip: isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode',
+                    onPressed: () => themeController.toggleTheme(context),
+                  );
+                },
+              ),
+              const SizedBox(width: 8),
+            ],
           ),
-          const SizedBox(width: 8),
-        ],
-      ),
-      body: content,
+          body: bodyContent,
+        );
+      },
     );
   }
 
