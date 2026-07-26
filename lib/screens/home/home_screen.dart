@@ -149,6 +149,11 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(width: 10),
             const Text('Timbr'),
+            const SizedBox(width: 8),
+            ShadBadge(
+              label: AppConstants.appVersionName,
+              variant: ShadBadgeVariant.outline,
+            ),
           ],
         ),
         actions: [
