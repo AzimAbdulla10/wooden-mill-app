@@ -1,13 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:wooden_mill_app/core/theme/shadcn_tokens.dart';
 import 'package:wooden_mill_app/core/utils/volume_calculator.dart';
+import 'package:wooden_mill_app/main.dart';
 import 'package:wooden_mill_app/models/order.dart';
 import 'package:wooden_mill_app/repositories/order_repository.dart';
+import 'package:wooden_mill_app/widgets/shad_badge.dart';
+import 'package:wooden_mill_app/widgets/shad_card.dart';
+import 'package:wooden_mill_app/widgets/shad_stat_tile.dart';
 
 class DetailsScreen extends StatefulWidget {
   final int orderId;
+  final bool isEmbedded;
 
-  const DetailsScreen({super.key, required this.orderId});
+  const DetailsScreen({
+    super.key,
+    required this.orderId,
+    this.isEmbedded = false,
+  });
 
   @override
   State<DetailsScreen> createState() => _DetailsScreenState();
@@ -23,6 +33,14 @@ class _DetailsScreenState extends State<DetailsScreen> {
     _loadOrder();
   }
 
+  @override
+  void didUpdateWidget(covariant DetailsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.orderId != widget.orderId) {
+      _loadOrder();
+    }
+  }
+
   void _loadOrder() {
     setState(() {
       _orderFuture = _repository.getOrderById(widget.orderId);
@@ -33,219 +51,188 @@ class _DetailsScreenState extends State<DetailsScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Order Details',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-      ),
-      body: FutureBuilder<OrderModel?>(
-        future: _orderFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
-          }
+    final content = FutureBuilder<OrderModel?>(
+      future: _orderFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-          if (snapshot.hasError) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.error_outline, color: theme.colorScheme.error, size: 48),
-                  const SizedBox(height: 16),
-                  const Text('Error loading order details'),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: _loadOrder,
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          final order = snapshot.data;
-          if (order == null) {
-            return const Center(
-              child: Text('Order not found'),
-            );
-          }
-
-          final formattedDate = DateFormat('dd MMMM yyyy, hh:mm a').format(order.dateTime);
-
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
+        if (snapshot.hasError) {
+          return Center(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Customer details card
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Customer Information',
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: theme.colorScheme.primary,
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.secondaryContainer,
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                order.woodType,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: theme.colorScheme.onSecondaryContainer,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const Divider(height: 24),
-                        _buildInfoRow(Icons.person_outline, 'Customer Name', order.customerName),
-                        const SizedBox(height: 10),
-                        _buildInfoRow(Icons.phone_outlined, 'Phone Number', order.phone),
-                        const SizedBox(height: 10),
-                        _buildInfoRow(Icons.calendar_today_outlined, 'Order Date', formattedDate),
-                      ],
-                    ),
-                  ),
-                ),
+                Icon(Icons.error_outline, color: theme.colorScheme.error, size: 48),
                 const SizedBox(height: 16),
-
-                // Logs list header
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                  child: Text(
-                    'Logs Dimensions (${order.logs.length})',
-                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                  ),
-                ),
-                const SizedBox(height: 8),
-
-                // Table of logs
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: DataTable(
-                        columnSpacing: 20,
-                        horizontalMargin: 8,
-                        columns: const [
-                          DataColumn(label: Text('#', style: TextStyle(fontWeight: FontWeight.bold))),
-                          DataColumn(label: Text('Length\n(ft)', style: TextStyle(fontWeight: FontWeight.bold))),
-                          DataColumn(label: Text('Girth\n(in/ft)', style: TextStyle(fontWeight: FontWeight.bold))),
-                          DataColumn(label: Text('Volume\n(cft)', style: TextStyle(fontWeight: FontWeight.bold))),
-                          DataColumn(label: Text('Price', style: TextStyle(fontWeight: FontWeight.bold))),
-                        ],
-                        rows: List<DataRow>.generate(order.logs.length, (index) {
-                          final log = order.logs[index];
-                          return DataRow(
-                            cells: [
-                              DataCell(Text('${index + 1}')),
-                              DataCell(Text(log.length.toStringAsFixed(1))),
-                              DataCell(Text(log.girth.toStringAsFixed(1))),
-                              DataCell(Text(VolumeCalculator.formatVolume(log.volume))),
-                              DataCell(Text(VolumeCalculator.formatCurrency(log.price))),
-                            ],
-                          );
-                        }),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Financial Breakdown
-                Card(
-                  color: theme.colorScheme.primaryContainer.withValues(alpha: 0.15),
-                  elevation: 2,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Text(
-                          'Payment Details',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: theme.colorScheme.onPrimaryContainer,
-                          ),
-                        ),
-                        const Divider(height: 20),
-                        _buildTotalRow('Total Volume', '${VolumeCalculator.formatVolume(order.totalVolume)} cft', false, theme),
-                        const SizedBox(height: 8),
-                        _buildTotalRow('Subtotal', VolumeCalculator.formatCurrency(order.subtotal), false, theme),
-                        const SizedBox(height: 8),
-                        _buildTotalRow('Cutting Charge', '+ ${VolumeCalculator.formatCurrency(order.cuttingCharge)}', false, theme),
-                        const SizedBox(height: 8),
-                        _buildTotalRow('Discount', '- ${VolumeCalculator.formatCurrency(order.discount)}', false, theme),
-                        const Divider(height: 24),
-                        _buildTotalRow('Final Price', VolumeCalculator.formatCurrency(order.finalPrice), true, theme),
-                      ],
-                    ),
-                  ),
-                ),
+                const Text('Error loading order details'),
+                const SizedBox(height: 12),
+                OutlinedButton(onPressed: _loadOrder, child: const Text('Retry')),
               ],
             ),
           );
-        },
+        }
+
+        final order = snapshot.data;
+        if (order == null) {
+          return const Center(child: Text('Order not found'));
+        }
+
+        final formattedDate = DateFormat('dd MMMM yyyy, hh:mm a').format(order.dateTime);
+
+        return ListView(
+          padding: const EdgeInsets.all(ShadTokens.spaceLg),
+          children: [
+            ShadCard(
+              title: 'Customer Details',
+              description: 'Customer contact and wood classification',
+              action: ShadBadge(
+                label: order.woodType,
+                variant: ShadBadgeVariant.defaultVariant,
+              ),
+              child: Column(
+                children: [
+                  _buildDetailRow(Icons.person_outline, 'Customer Name', order.customerName, theme),
+                  const SizedBox(height: 10),
+                  _buildDetailRow(Icons.phone_outlined, 'Phone Number', order.phone, theme),
+                  const SizedBox(height: 10),
+                  _buildDetailRow(Icons.calendar_today_outlined, 'Date & Time', formattedDate, theme),
+                ],
+              ),
+            ),
+            const SizedBox(height: ShadTokens.spaceLg),
+
+            // Logs Table Card
+            ShadCard(
+              title: 'Log Dimensions Breakdown',
+              description: '${order.logs.length} ${order.logs.length == 1 ? "log entry" : "log entries"} recorded',
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: DataTable(
+                  columnSpacing: 28,
+                  horizontalMargin: 8,
+                  headingRowHeight: 40,
+                  dataRowMinHeight: 44,
+                  columns: const [
+                    DataColumn(label: Text('#', style: TextStyle(fontWeight: FontWeight.bold))),
+                    DataColumn(label: Text('Length (ft)', style: TextStyle(fontWeight: FontWeight.bold))),
+                    DataColumn(label: Text('Girth (in)', style: TextStyle(fontWeight: FontWeight.bold))),
+                    DataColumn(label: Text('Volume (cft)', style: TextStyle(fontWeight: FontWeight.bold))),
+                    DataColumn(label: Text('Price', style: TextStyle(fontWeight: FontWeight.bold))),
+                  ],
+                  rows: List<DataRow>.generate(order.logs.length, (index) {
+                    final log = order.logs[index];
+                    return DataRow(
+                      cells: [
+                        DataCell(Text('${index + 1}')),
+                        DataCell(Text(log.length.toStringAsFixed(1))),
+                        DataCell(Text(log.girth.toStringAsFixed(1))),
+                        DataCell(Text(VolumeCalculator.formatVolume(log.volume))),
+                        DataCell(Text(VolumeCalculator.formatCurrency(log.price))),
+                      ],
+                    );
+                  }),
+                ),
+              ),
+            ),
+            const SizedBox(height: ShadTokens.spaceLg),
+
+            // Financial Summary Card
+            ShadCard(
+              title: 'Financial Breakdown',
+              description: 'Subtotals, charges, and final payable total',
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ShadStatTile(
+                          label: 'Total Volume',
+                          value: '${VolumeCalculator.formatVolume(order.totalVolume)} cft',
+                          icon: Icons.layers_outlined,
+                        ),
+                      ),
+                      const SizedBox(width: ShadTokens.spaceMd),
+                      Expanded(
+                        child: ShadStatTile(
+                          label: 'Subtotal',
+                          value: VolumeCalculator.formatCurrency(order.subtotal),
+                          icon: Icons.payments_outlined,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: ShadTokens.spaceMd),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ShadStatTile(
+                          label: 'Cutting Charge',
+                          value: '+ ${VolumeCalculator.formatCurrency(order.cuttingCharge)}',
+                        ),
+                      ),
+                      const SizedBox(width: ShadTokens.spaceMd),
+                      Expanded(
+                        child: ShadStatTile(
+                          label: 'Discount',
+                          value: '- ${VolumeCalculator.formatCurrency(order.discount)}',
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: ShadTokens.spaceMd),
+                  ShadStatTile(
+                    label: 'Final Payable Amount',
+                    value: VolumeCalculator.formatCurrency(order.finalPrice),
+                    icon: Icons.account_balance_wallet_outlined,
+                    isHighlight: true,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (widget.isEmbedded) {
+      return content;
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Order Details'),
+        actions: [
+          ListenableBuilder(
+            listenable: themeController,
+            builder: (context, _) {
+              final isDark = Theme.of(context).brightness == Brightness.dark;
+              return IconButton(
+                icon: Icon(isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined),
+                tooltip: isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode',
+                onPressed: () => themeController.toggleTheme(context),
+              );
+            },
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
+      body: content,
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String label, String value) {
+  Widget _buildDetailRow(IconData icon, String label, String value, ThemeData theme) {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 20, color: Colors.grey.shade600),
+        Icon(icon, size: 18, color: theme.colorScheme.onSurfaceVariant),
         const SizedBox(width: 12),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              label,
-              style: const TextStyle(color: Colors.black54, fontSize: 12, fontWeight: FontWeight.w500),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              value,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-            ),
+            Text(label, style: TextStyle(fontSize: 11, color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.w500)),
+            Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
           ],
         ),
-      ],
-    );
-  }
-
-  Widget _buildTotalRow(String label, String value, bool isTotal, ThemeData theme) {
-    final style = isTotal
-        ? theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: theme.colorScheme.primary,
-          )
-        : const TextStyle(fontSize: 15, fontWeight: FontWeight.w500);
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(label, style: style),
-        Text(value, style: style),
       ],
     );
   }

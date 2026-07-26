@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:wooden_mill_app/core/constants/app_constants.dart';
+import 'package:wooden_mill_app/core/theme/shadcn_tokens.dart';
+import 'package:wooden_mill_app/core/utils/responsive_layout.dart';
 import 'package:wooden_mill_app/core/utils/volume_calculator.dart';
-import 'package:wooden_mill_app/screens/home/home_controller.dart';
-import 'package:wooden_mill_app/screens/history/history_screen.dart';
 import 'package:wooden_mill_app/main.dart';
+import 'package:wooden_mill_app/screens/history/history_screen.dart';
+import 'package:wooden_mill_app/screens/home/home_controller.dart';
+import 'package:wooden_mill_app/widgets/shad_badge.dart';
+import 'package:wooden_mill_app/widgets/shad_card.dart';
+import 'package:wooden_mill_app/widgets/shad_stat_tile.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -35,21 +40,20 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _submitForm() async {
-    // Dismiss keyboard
     FocusScope.of(context).unfocus();
 
     if (!_controller.validateForm()) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(_controller.errorMessage ?? 'Please check your inputs'),
+          content: Text(_controller.errorMessage ?? 'Please verify your inputs'),
           backgroundColor: Theme.of(context).colorScheme.error,
           behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(ShadTokens.radiusSm)),
         ),
       );
       return;
     }
 
-    // Show Confirmation Dialog
     final confirm = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
@@ -76,13 +80,14 @@ class _HomeScreenState extends State<HomeScreen> {
           SnackBar(
             content: const Row(
               children: [
-                Icon(Icons.check_circle, color: Colors.white),
+                Icon(Icons.check_circle_outline, color: Colors.white, size: 20),
                 SizedBox(width: 8),
-                Text('Order saved successfully!'),
+                Text('Order successfully saved to database!'),
               ],
             ),
-            backgroundColor: Colors.green.shade700,
+            backgroundColor: const Color(0xFF059669),
             behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(ShadTokens.radiusSm)),
           ),
         );
       } else {
@@ -91,6 +96,7 @@ class _HomeScreenState extends State<HomeScreen> {
             content: Text(_controller.errorMessage ?? 'Failed to save order'),
             backgroundColor: Theme.of(context).colorScheme.error,
             behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(ShadTokens.radiusSm)),
           ),
         );
       }
@@ -100,13 +106,22 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Wooden Mill Calculator',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary,
+                borderRadius: BorderRadius.circular(ShadTokens.radiusSm),
+              ),
+              child: Icon(Icons.square_foot, size: 18, color: theme.colorScheme.onPrimary),
+            ),
+            const SizedBox(width: 10),
+            const Text('Wooden Mill Calculator'),
+          ],
         ),
         actions: [
           ListenableBuilder(
@@ -114,14 +129,14 @@ class _HomeScreenState extends State<HomeScreen> {
             builder: (context, _) {
               final isDark = Theme.of(context).brightness == Brightness.dark;
               return IconButton(
-                icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode),
+                icon: Icon(isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined),
                 tooltip: isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode',
                 onPressed: () => themeController.toggleTheme(context),
               );
             },
           ),
           IconButton(
-            icon: const Icon(Icons.history),
+            icon: const Icon(Icons.history_outlined),
             tooltip: 'Order History',
             onPressed: _navigateToHistory,
           ),
@@ -132,218 +147,212 @@ class _HomeScreenState extends State<HomeScreen> {
         listenable: _controller,
         builder: (context, child) {
           return SafeArea(
-            child: isLandscape
-                ? Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Left column: Customer Details & Summary
-                      Expanded(
-                        flex: 4,
-                        child: SingleChildScrollView(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              _buildCustomerCard(theme),
-                              const SizedBox(height: 16),
-                              _buildSummaryCard(theme),
-                            ],
-                          ),
-                        ),
-                      ),
-                      // Right column: Logs Form
-                      Expanded(
-                        flex: 6,
-                        child: Column(
-                          children: [
-                            _buildLogsHeader(theme),
-                            Expanded(child: _buildLogsList(theme)),
-                            _buildSubmitButton(),
-                          ],
-                        ),
-                      ),
-                    ],
-                  )
-                : Column(
-                    children: [
-                      Expanded(
-                        child: CustomScrollView(
-                          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-                          slivers: [
-                            SliverToBoxAdapter(
-                              child: Padding(
-                                padding: const EdgeInsets.all(16.0),
-                                child: Column(
-                                  children: [
-                                    _buildCustomerCard(theme),
-                                    const SizedBox(height: 16),
-                                    _buildLogsHeader(theme),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            _buildLogsSliverList(theme),
-                            SliverToBoxAdapter(
-                              child: Padding(
-                                padding: const EdgeInsets.all(16.0),
-                                child: _buildSummaryCard(theme),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      _buildSubmitButton(),
-                    ],
-                  ),
+            child: ResponsiveLayout(
+              phone: _buildPhoneLayout(theme),
+              tablet: _buildTabletLayout(theme),
+            ),
           );
         },
       ),
     );
   }
 
-  Widget _buildCustomerCard(ThemeData theme) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Customer Information',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: theme.colorScheme.primary,
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _controller.customerNameController,
-              decoration: const InputDecoration(
-                labelText: 'Customer Name',
-                prefixIcon: Icon(Icons.person),
-              ),
-              textCapitalization: TextCapitalization.words,
-              keyboardType: TextInputType.name,
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _controller.phoneController,
-              decoration: const InputDecoration(
-                labelText: 'Phone Number',
-                prefixIcon: Icon(Icons.phone),
-                counterText: '',
-              ),
-              keyboardType: TextInputType.phone,
-              maxLength: 10,
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-              ],
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Wood Type Selection',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: theme.colorScheme.primary,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<WoodTypeConfig>(
-                  value: _controller.selectedWoodType,
-                  isExpanded: true,
-                  items: AppConstants.woodTypes.map((wood) {
-                    return DropdownMenuItem<WoodTypeConfig>(
-                      value: wood,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            wood.displayName,
-                            style: const TextStyle(fontWeight: FontWeight.w500),
-                          ),
-                          Text(
-                            '${VolumeCalculator.formatCurrency(wood.ratePerCft)}/cft',
-                            style: TextStyle(
-                              color: theme.colorScheme.primary,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-                  onChanged: (val) {
-                    if (val != null) {
-                      _controller.selectedWoodType = val;
-                    }
-                  },
+  // Mobile Layout: Clean single-column layout with section cards
+  Widget _buildPhoneLayout(ThemeData theme) {
+    return Column(
+      children: [
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.all(ShadTokens.spaceLg),
+            children: [
+              _buildCustomerCard(theme),
+              const SizedBox(height: ShadTokens.spaceLg),
+              _buildWoodTypeCard(theme),
+              const SizedBox(height: ShadTokens.spaceLg),
+              _buildLogsHeader(theme),
+              const SizedBox(height: ShadTokens.spaceSm),
+              ...List.generate(
+                _controller.logs.length,
+                (index) => Padding(
+                  padding: const EdgeInsets.only(bottom: ShadTokens.spaceMd),
+                  child: _buildLogItem(index, theme),
                 ),
               ),
-            ),
-          ],
+              const SizedBox(height: ShadTokens.spaceSm),
+              _buildSummaryCard(theme),
+            ],
+          ),
         ),
-      ),
+        _buildSubmitBar(theme),
+      ],
     );
   }
 
-  Widget _buildLogsHeader(ThemeData theme) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            'Logs Dimensions (${_controller.logs.length})',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
+  // Tablet Layout: Adaptive multi-column side-by-side pane layout
+  Widget _buildTabletLayout(ThemeData theme) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Left Column: Customer Details, Wood Selection & Live Metrics
+        SizedBox(
+          width: 380,
+          child: Container(
+            decoration: BoxDecoration(
+              border: Border(right: BorderSide(color: theme.colorScheme.outline, width: 1)),
+            ),
+            child: ListView(
+              padding: const EdgeInsets.all(ShadTokens.spaceLg),
+              children: [
+                _buildCustomerCard(theme),
+                const SizedBox(height: ShadTokens.spaceLg),
+                _buildWoodTypeCard(theme),
+                const SizedBox(height: ShadTokens.spaceLg),
+                _buildSummaryCard(theme),
+              ],
             ),
           ),
-          ElevatedButton.icon(
-            onPressed: _controller.logs.length < AppConstants.maxLogs
-                ? _controller.addLog
-                : null,
-            icon: const Icon(Icons.add),
-            label: const Text('Add Log'),
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
+        // Right Column: Dynamic Log Dimension Entry List & Action Bar
+        Expanded(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  ShadTokens.spaceLg,
+                  ShadTokens.spaceLg,
+                  ShadTokens.spaceLg,
+                  ShadTokens.spaceSm,
+                ),
+                child: _buildLogsHeader(theme),
+              ),
+              Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: ShadTokens.spaceLg),
+                  itemCount: _controller.logs.length,
+                  itemBuilder: (context, index) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: ShadTokens.spaceMd),
+                      child: _buildLogItem(index, theme),
+                    );
+                  },
+                ),
+              ),
+              _buildSubmitBar(theme),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCustomerCard(ThemeData theme) {
+    return ShadCard(
+      title: 'Customer Details',
+      description: 'Enter customer contact details for billing',
+      child: Column(
+        children: [
+          TextField(
+            controller: _controller.customerNameController,
+            decoration: const InputDecoration(
+              labelText: 'Customer Name',
+              hintText: 'e.g. John Doe',
+              prefixIcon: Icon(Icons.person_outline, size: 18),
             ),
+            textCapitalization: TextCapitalization.words,
+            keyboardType: TextInputType.name,
+          ),
+          const SizedBox(height: ShadTokens.spaceMd),
+          TextField(
+            controller: _controller.phoneController,
+            decoration: const InputDecoration(
+              labelText: 'Phone Number',
+              hintText: '10 digit mobile number',
+              prefixIcon: Icon(Icons.phone_outlined, size: 18),
+              counterText: '',
+            ),
+            keyboardType: TextInputType.phone,
+            maxLength: 10,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildLogsList(ThemeData theme) {
-    return ListView.builder(
-      itemCount: _controller.logs.length,
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      itemBuilder: (context, index) {
-        return _buildLogItem(index, theme);
-      },
+  Widget _buildWoodTypeCard(ThemeData theme) {
+    return ShadCard(
+      title: 'Wood Category',
+      description: 'Select wood species for rate calculation',
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: ShadTokens.spaceMd, vertical: 4),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(ShadTokens.radiusMd),
+          border: Border.all(color: theme.colorScheme.outline, width: 1),
+          color: theme.cardTheme.color,
+        ),
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<WoodTypeConfig>(
+            value: _controller.selectedWoodType,
+            isExpanded: true,
+            icon: const Icon(Icons.unfold_more, size: 20),
+            items: AppConstants.woodTypes.map((wood) {
+              return DropdownMenuItem<WoodTypeConfig>(
+                value: wood,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      wood.displayName,
+                      style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
+                    ),
+                    ShadBadge(
+                      label: '${VolumeCalculator.formatCurrency(wood.ratePerCft)} / cft',
+                      variant: ShadBadgeVariant.outline,
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+            onChanged: (val) {
+              if (val != null) {
+                _controller.selectedWoodType = val;
+              }
+            },
+          ),
+        ),
+      ),
     );
   }
 
-  Widget _buildLogsSliverList(ThemeData theme) {
-    return SliverPadding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      sliver: SliverList(
-        delegate: SliverChildBuilderDelegate(
-          (context, index) {
-            return _buildLogItem(index, theme);
-          },
-          childCount: _controller.logs.length,
+  Widget _buildLogsHeader(ThemeData theme) {
+    final canAdd = _controller.logs.length < AppConstants.maxLogs;
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Row(
+          children: [
+            const Text(
+              'Log Measurements',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, letterSpacing: -0.2),
+            ),
+            const SizedBox(width: 8),
+            ShadBadge(
+              label: '${_controller.logs.length} / ${AppConstants.maxLogs}',
+              variant: ShadBadgeVariant.secondary,
+            ),
+          ],
         ),
-      ),
+        OutlinedButton.icon(
+          onPressed: canAdd ? _controller.addLog : null,
+          icon: const Icon(Icons.add, size: 16),
+          label: const Text('Add Log'),
+          style: OutlinedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            minimumSize: Size.zero,
+          ),
+        ),
+      ],
     );
   }
 
@@ -351,49 +360,30 @@ class _HomeScreenState extends State<HomeScreen> {
     final log = _controller.logs[index];
     final showRemove = _controller.logs.length > AppConstants.minLogs;
 
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 6.0),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: theme.colorScheme.outlineVariant),
-      ),
+    return ShadCard(
+      padding: const EdgeInsets.all(ShadTokens.spaceMd),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              CircleAvatar(
-                radius: 12,
-                backgroundColor: theme.colorScheme.primaryContainer,
-                child: Text(
-                  '${index + 1}',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.onPrimaryContainer,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Log #${index + 1}',
-                style: const TextStyle(fontWeight: FontWeight.bold),
+              ShadBadge(
+                label: 'Log #${index + 1}',
+                variant: ShadBadgeVariant.defaultVariant,
               ),
               const Spacer(),
               if (showRemove)
                 IconButton(
-                  icon: Icon(Icons.delete_outline, color: theme.colorScheme.error),
+                  icon: Icon(Icons.close, size: 18, color: theme.colorScheme.onSurfaceVariant),
                   onPressed: () => _controller.removeLogAt(index),
+                  tooltip: 'Remove Log',
                   constraints: const BoxConstraints(),
                   padding: EdgeInsets.zero,
-                  splashRadius: 20,
-                  tooltip: 'Remove Log',
+                  splashRadius: 18,
                 ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: ShadTokens.spaceMd),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -401,61 +391,67 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: TextField(
                   controller: log.lengthController,
                   decoration: InputDecoration(
-                    labelText: 'Length (ft)',
+                    labelText: 'Length (feet)',
+                    hintText: 'e.g. 10.5',
                     errorText: log.lengthError,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                   ),
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
-                  ],
+                  inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*'))],
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: ShadTokens.spaceMd),
               Expanded(
                 child: TextField(
                   controller: log.girthController,
                   decoration: InputDecoration(
-                    labelText: 'Girth (in/ft)',
+                    labelText: 'Girth (inches)',
+                    hintText: 'e.g. 8.0',
                     errorText: log.girthError,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                   ),
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
-                  ],
+                  inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*'))],
                 ),
               ),
             ],
           ),
           if (log.volume > 0) ...[
-            const Divider(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Flexible(
-                  child: Text(
-                    'Volume: ${VolumeCalculator.formatVolume(log.volume)} cft',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey.shade700,
+            const SizedBox(height: ShadTokens.spaceMd),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(ShadTokens.radiusSm),
+                border: Border.all(color: theme.colorScheme.outline, width: 1),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Flexible(
+                    child: Text(
+                      'Volume: ${VolumeCalculator.formatVolume(log.volume)} cft',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-                const SizedBox(width: 8),
-                Flexible(
-                  child: Text(
-                    'Price: ${VolumeCalculator.formatCurrency(log.price)}',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.primary,
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      VolumeCalculator.formatCurrency(log.price),
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onSurface,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.end,
                     ),
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.end,
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
         ],
@@ -464,142 +460,94 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildSummaryCard(ThemeData theme) {
-    return Card(
-      elevation: 4,
-      color: theme.colorScheme.primaryContainer.withValues(alpha: 0.15),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'Calculation Summary',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: theme.colorScheme.onPrimaryContainer,
+    return ShadCard(
+      title: 'Summary & Billing',
+      description: 'Calculations based on formulas & rates',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: ShadStatTile(
+                  label: 'Total Volume',
+                  value: '${VolumeCalculator.formatVolume(_controller.totalVolume)} cft',
+                  icon: Icons.layers_outlined,
+                ),
               ),
-            ),
-            const Divider(height: 20),
-            _buildSummaryRow(
-              'Total Volume',
-              '${VolumeCalculator.formatVolume(_controller.totalVolume)} cft',
-              theme,
-            ),
-            const SizedBox(height: 8),
-            _buildSummaryRow(
-              'Subtotal',
-              VolumeCalculator.formatCurrency(_controller.subtotal),
-              theme,
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _controller.cuttingChargeController,
-                    decoration: const InputDecoration(
-                      labelText: 'Cutting Charge (₹)',
-                      prefixText: '₹ ',
-                    ),
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  ),
+              const SizedBox(width: ShadTokens.spaceMd),
+              Expanded(
+                child: ShadStatTile(
+                  label: 'Subtotal',
+                  value: VolumeCalculator.formatCurrency(_controller.subtotal),
+                  icon: Icons.payments_outlined,
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextField(
-                    controller: _controller.discountController,
-                    decoration: const InputDecoration(
-                      labelText: 'Discount (₹)',
-                      prefixText: '₹ ',
-                    ),
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              ),
+            ],
+          ),
+          const SizedBox(height: ShadTokens.spaceMd),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _controller.cuttingChargeController,
+                  decoration: const InputDecoration(
+                    labelText: 'Cutting Charge (₹)',
+                    prefixText: '₹ ',
                   ),
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 ),
-              ],
-            ),
-            const Divider(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Flexible(
-                  child: Text(
-                    'Final Payable',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.primary,
-                    ),
-                    overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(width: ShadTokens.spaceMd),
+              Expanded(
+                child: TextField(
+                  controller: _controller.discountController,
+                  decoration: const InputDecoration(
+                    labelText: 'Discount (₹)',
+                    prefixText: '₹ ',
                   ),
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 ),
-                const SizedBox(width: 8),
-                Flexible(
-                  child: Text(
-                    VolumeCalculator.formatCurrency(_controller.finalPrice),
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.primary,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.end,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
+              ),
+            ],
+          ),
+          const SizedBox(height: ShadTokens.spaceMd),
+          ShadStatTile(
+            label: 'Final Payable Amount',
+            value: VolumeCalculator.formatCurrency(_controller.finalPrice),
+            icon: Icons.account_balance_wallet_outlined,
+            isHighlight: true,
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildSummaryRow(String label, String value, ThemeData theme) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Flexible(
-          child: Text(
-            label,
-            style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 15),
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Flexible(
-          child: Text(
-            value,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.end,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSubmitButton() {
+  Widget _buildSubmitBar(ThemeData theme) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-      color: Colors.white,
+      padding: const EdgeInsets.all(ShadTokens.spaceLg),
+      decoration: BoxDecoration(
+        color: theme.cardTheme.color,
+        border: Border(top: BorderSide(color: theme.colorScheme.outline, width: 1)),
+      ),
       child: SizedBox(
         width: double.infinity,
-        height: 52,
-        child: ElevatedButton(
+        height: 48,
+        child: ElevatedButton.icon(
           onPressed: _controller.isSaving ? null : _submitForm,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            foregroundColor: Theme.of(context).colorScheme.onPrimary,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-          child: _controller.isSaving
+          icon: _controller.isSaving
               ? const SizedBox(
-                  width: 24,
-                  height: 24,
+                  width: 18,
+                  height: 18,
                   child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                 )
-              : const Text('SUBMIT ORDER', style: TextStyle(letterSpacing: 1.1)),
+              : const Icon(Icons.check, size: 18),
+          label: Text(
+            _controller.isSaving ? 'SAVING ORDER...' : 'SAVE & CONFIRM ORDER',
+            style: const TextStyle(fontWeight: FontWeight.w600, letterSpacing: 0.5),
+          ),
         ),
       ),
     );
@@ -633,69 +581,79 @@ class _ConfirmationDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      title: const Row(
-        children: [
-          Icon(Icons.assignment_turned_in, color: Colors.green),
-          SizedBox(width: 8),
-          Text('Confirm Order'),
-        ],
-      ),
-      content: SingleChildScrollView(
+    return Dialog(
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 440),
+        padding: const EdgeInsets.all(ShadTokens.spaceXl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Please verify the details below before saving the order.',
-              style: TextStyle(color: Colors.grey, fontSize: 13),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primaryContainer.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(ShadTokens.radiusSm),
+                  ),
+                  child: Icon(Icons.receipt_long_outlined, size: 20, color: theme.colorScheme.primary),
+                ),
+                const SizedBox(width: 12),
+                const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Order Summary',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: -0.3),
+                    ),
+                    Text(
+                      'Verify order details before saving',
+                      style: TextStyle(fontSize: 13, color: Colors.grey),
+                    ),
+                  ],
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            _buildDetailRow('Customer:', customerName, theme),
-            _buildDetailRow('Phone:', phone, theme),
-            _buildDetailRow('Wood Type:', woodType.displayName, theme),
-            _buildDetailRow('Number of Logs:', '$numberOfLogs', theme),
-            _buildDetailRow('Total Volume:', '${VolumeCalculator.formatVolume(totalVolume)} cft', theme),
-            const Divider(height: 20),
-            _buildDetailRow('Subtotal:', VolumeCalculator.formatCurrency(subtotal), theme),
-            _buildDetailRow('Cutting Charge:', '+ ${VolumeCalculator.formatCurrency(cuttingCharge)}', theme),
-            _buildDetailRow('Discount:', '- ${VolumeCalculator.formatCurrency(discount)}', theme),
-            const Divider(height: 20),
+            const Divider(height: 32),
+            _buildDetailRow('Customer Name', customerName, theme),
+            _buildDetailRow('Phone Number', phone, theme),
+            _buildDetailRow('Wood Type', woodType.displayName, theme),
+            _buildDetailRow('Number of Logs', '$numberOfLogs', theme),
+            _buildDetailRow('Total Volume', '${VolumeCalculator.formatVolume(totalVolume)} cft', theme),
+            const Divider(height: 24),
+            _buildDetailRow('Subtotal', VolumeCalculator.formatCurrency(subtotal), theme),
+            _buildDetailRow('Cutting Charge', '+ ${VolumeCalculator.formatCurrency(cuttingCharge)}', theme),
+            _buildDetailRow('Discount', '- ${VolumeCalculator.formatCurrency(discount)}', theme),
+            const Divider(height: 24),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Final Price:',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
+                const Text('Final Price', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 Text(
                   VolumeCalculator.formatCurrency(finalPrice),
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: theme.colorScheme.primary,
-                  ),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: theme.colorScheme.primary),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                OutlinedButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Cancel'),
+                ),
+                const SizedBox(width: 12),
+                ElevatedButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Confirm & Save'),
                 ),
               ],
             ),
           ],
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(false),
-          child: const Text('CANCEL'),
-        ),
-        ElevatedButton(
-          onPressed: () => Navigator.of(context).pop(true),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: theme.colorScheme.primary,
-            foregroundColor: theme.colorScheme.onPrimary,
-          ),
-          child: const Text('SAVE ORDER'),
-        ),
-      ],
     );
   }
 
@@ -703,21 +661,10 @@ class _ConfirmationDialog extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          SizedBox(
-            width: 120,
-            child: Text(
-              label,
-              style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black54),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(fontWeight: FontWeight.w500),
-            ),
-          ),
+          Text(label, style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurfaceVariant)),
+          Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
         ],
       ),
     );
