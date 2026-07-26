@@ -25,6 +25,18 @@ class MyApp extends StatelessWidget {
           darkTheme: AppTheme.darkTheme,
           themeMode: themeController.themeMode,
           routerConfig: AppRouter.router,
+          builder: (context, child) {
+            final mediaQuery = MediaQuery.of(context);
+            final systemTextScaler = mediaQuery.textScaler;
+            final densityScale = themeController.displayDensity.scaleFactor;
+
+            return MediaQuery(
+              data: mediaQuery.copyWith(
+                textScaler: TextScaler.linear(systemTextScaler.scale(1.0) * densityScale),
+              ),
+              child: child ?? const SizedBox.shrink(),
+            );
+          },
         );
       },
     );

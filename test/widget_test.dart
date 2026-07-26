@@ -8,7 +8,6 @@ import 'package:wooden_mill_app/repositories/draft_repository.dart';
 import 'package:wooden_mill_app/repositories/order_repository.dart';
 import 'package:wooden_mill_app/screens/home/home_controller.dart';
 
-// Mock repository to test HomeController without actual SQLite DB
 class MockOrderRepository extends OrderRepository {
   bool saveCalled = false;
   OrderModel? savedOrder;
@@ -17,7 +16,7 @@ class MockOrderRepository extends OrderRepository {
   Future<int> saveOrder(OrderModel order) async {
     saveCalled = true;
     savedOrder = order;
-    return 42; // Mocked ID
+    return 42;
   }
 }
 
@@ -43,9 +42,6 @@ class MockDraftRepository extends DraftRepository {
 void main() {
   group('VolumeCalculator Tests', () {
     test('calculateVolume performs business formula correctly', () {
-      // Volume = (length * girth * girth) / 16
-      // E.g., length = 12.0, girth = 8.0
-      // Volume = (12 * 8 * 8) / 16 = 768 / 16 = 48.0
       final volume = VolumeCalculator.calculateVolume(length: 12.0, girth: 8.0);
       expect(volume, equals(48.0));
     });
@@ -87,13 +83,11 @@ void main() {
     });
 
     test('adding and removing log rows respects bounds', () {
-      // Add logs up to max
       for (int i = 0; i < 25; i++) {
         controller.addLog();
       }
       expect(controller.logs.length, equals(AppConstants.maxLogs));
 
-      // Remove logs down to min
       for (int i = 0; i < 25; i++) {
         controller.removeLogAt(0);
       }
@@ -102,8 +96,6 @@ void main() {
 
     test('recalculates live values when log inputs change', () {
       final log = controller.logs.first;
-      
-      // Update length and girth
       log.lengthController.text = '10.0';
       log.girthController.text = '4.0';
       
@@ -111,14 +103,12 @@ void main() {
       expect(controller.subtotal, equals(48000.0));
       expect(controller.finalPrice, equals(48000.0));
 
-      // Change wood type to Coconut (rate 4500)
       controller.selectedWoodType = AppConstants.woodTypes.firstWhere((w) => w.name == 'Coconut');
       expect(controller.subtotal, equals(45000.0));
       expect(controller.finalPrice, equals(45000.0));
     });
 
     test('validates form inputs correctly', () {
-      // Invalid initially (empty customer name, phone, log dimensions)
       expect(controller.validateForm(), isFalse);
       expect(controller.errorMessage, contains('Customer Name is required'));
 
@@ -126,7 +116,7 @@ void main() {
       expect(controller.validateForm(), isFalse);
       expect(controller.errorMessage, contains('Phone Number is required'));
 
-      controller.phoneController.text = '12345'; // Invalid length
+      controller.phoneController.text = '12345';
       expect(controller.validateForm(), isFalse);
       expect(controller.errorMessage, contains('Phone Number must be exactly 10 digits'));
 
@@ -134,7 +124,6 @@ void main() {
       expect(controller.validateForm(), isFalse);
       expect(controller.errorMessage, contains('empty dimensions'));
 
-      // Fill in log dimensions
       controller.logs[0].lengthController.text = '10';
       controller.logs[0].girthController.text = '4';
       
@@ -159,22 +148,28 @@ void main() {
     });
   });
 
-  group('ThemeController Tests', () {
-    test('initial themeMode defaults to system', () {
+  group('ThemeController & Settings Tests', () {
+    test('initial themeMode defaults to system and density to recommended', () {
       final themeController = ThemeController();
       expect(themeController.themeMode, equals(ThemeMode.system));
+      expect(themeController.displayDensity, equals(AppDisplayDensity.recommended));
     });
 
-    test('setThemeMode updates state correctly', () async {
+    test('setThemeMode and setDisplayDensity update state correctly', () async {
       TestWidgetsFlutterBinding.ensureInitialized();
       final themeController = ThemeController();
+
       await themeController.setThemeMode(ThemeMode.dark);
       expect(themeController.themeMode, equals(ThemeMode.dark));
       expect(themeController.isDarkMode, isTrue);
 
-      await themeController.setThemeMode(ThemeMode.light);
-      expect(themeController.themeMode, equals(ThemeMode.light));
-      expect(themeController.isDarkMode, isFalse);
+      await themeController.setDisplayDensity(AppDisplayDensity.large);
+      expect(themeController.displayDensity, equals(AppDisplayDensity.large));
+      expect(themeController.displayDensity.scaleFactor, equals(1.1));
+
+      await themeController.resetSettings();
+      expect(themeController.themeMode, equals(ThemeMode.system));
+      expect(themeController.displayDensity, equals(AppDisplayDensity.recommended));
     });
   });
 }

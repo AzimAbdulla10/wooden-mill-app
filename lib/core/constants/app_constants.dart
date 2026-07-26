@@ -1,9 +1,9 @@
 class AppConstants {
   AppConstants._();
 
-  static const String appVersionName = '1.0.1';
-  static const String appBuildNumber = '2';
-  static const String appVersionDisplay = 'v1.0.1 (Build 2)';
+  static const String appVersionName = '1.0.2';
+  static const String appBuildNumber = '3';
+  static const String appVersionDisplay = 'v1.0.2 (Build 3)';
 
   // Wood Types config
   static const String teakName = 'Teak';
