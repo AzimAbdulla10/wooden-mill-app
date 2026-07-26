@@ -1,6 +1,8 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wooden_mill_app/core/constants/app_constants.dart';
 import 'package:wooden_mill_app/core/utils/volume_calculator.dart';
+import 'package:wooden_mill_app/core/theme/theme_controller.dart';
 import 'package:wooden_mill_app/screens/home/home_controller.dart';
 import 'package:wooden_mill_app/repositories/order_repository.dart';
 import 'package:wooden_mill_app/models/order.dart';
@@ -131,6 +133,25 @@ void main() {
       expect(mockRepository.saveCalled, isTrue);
       expect(mockRepository.savedOrder?.customerName, equals('Alice'));
       expect(mockRepository.savedOrder?.finalPrice, equals(48000.0));
+    });
+  });
+
+  group('ThemeController Tests', () {
+    test('initial themeMode defaults to system', () {
+      final themeController = ThemeController();
+      expect(themeController.themeMode, equals(ThemeMode.system));
+    });
+
+    test('setThemeMode updates state correctly', () async {
+      TestWidgetsFlutterBinding.ensureInitialized();
+      final themeController = ThemeController();
+      await themeController.setThemeMode(ThemeMode.dark);
+      expect(themeController.themeMode, equals(ThemeMode.dark));
+      expect(themeController.isDarkMode, isTrue);
+
+      await themeController.setThemeMode(ThemeMode.light);
+      expect(themeController.themeMode, equals(ThemeMode.light));
+      expect(themeController.isDarkMode, isFalse);
     });
   });
 }
