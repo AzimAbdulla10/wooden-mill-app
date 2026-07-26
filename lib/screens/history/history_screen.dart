@@ -4,6 +4,7 @@ import 'package:wooden_mill_app/core/utils/volume_calculator.dart';
 import 'package:wooden_mill_app/models/order.dart';
 import 'package:wooden_mill_app/repositories/order_repository.dart';
 import 'package:wooden_mill_app/screens/details/details_screen.dart';
+import 'package:wooden_mill_app/main.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -46,6 +47,20 @@ class _HistoryScreenState extends State<HistoryScreen> {
           'Order History',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
+        actions: [
+          ListenableBuilder(
+            listenable: themeController,
+            builder: (context, _) {
+              final isDark = Theme.of(context).brightness == Brightness.dark;
+              return IconButton(
+                icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode),
+                tooltip: isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode',
+                onPressed: () => themeController.toggleTheme(context),
+              );
+            },
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: RefreshIndicator(
         onRefresh: () async {
