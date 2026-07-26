@@ -3,7 +3,6 @@ import 'package:intl/intl.dart';
 import 'package:wooden_mill_app/core/theme/shadcn_tokens.dart';
 import 'package:wooden_mill_app/core/utils/pdf_invoice_helper.dart';
 import 'package:wooden_mill_app/core/utils/volume_calculator.dart';
-import 'package:wooden_mill_app/main.dart';
 import 'package:wooden_mill_app/models/order.dart';
 import 'package:wooden_mill_app/repositories/order_repository.dart';
 import 'package:wooden_mill_app/widgets/shad_badge.dart';
@@ -215,17 +214,6 @@ class _DetailsScreenState extends State<DetailsScreen> {
                 icon: const Icon(Icons.print_outlined),
                 tooltip: 'Print Receipt (PDF)',
                 onPressed: () => PdfInvoiceHelper.printOrderInvoice(context, order),
-              ),
-              ListenableBuilder(
-                listenable: themeController,
-                builder: (context, _) {
-                  final isDark = Theme.of(context).brightness == Brightness.dark;
-                  return IconButton(
-                    icon: Icon(isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined),
-                    tooltip: isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode',
-                    onPressed: () => themeController.toggleTheme(context),
-                  );
-                },
               ),
               const SizedBox(width: 8),
             ],

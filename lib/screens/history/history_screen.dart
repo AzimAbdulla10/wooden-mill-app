@@ -4,7 +4,6 @@ import 'package:intl/intl.dart';
 import 'package:wooden_mill_app/core/theme/shadcn_tokens.dart';
 import 'package:wooden_mill_app/core/utils/responsive_layout.dart';
 import 'package:wooden_mill_app/core/utils/volume_calculator.dart';
-import 'package:wooden_mill_app/main.dart';
 import 'package:wooden_mill_app/models/order.dart';
 import 'package:wooden_mill_app/repositories/order_repository.dart';
 import 'package:wooden_mill_app/screens/details/details_screen.dart';
@@ -72,24 +71,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isPhone = ResponsiveLayout.isPhone(context);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Order History'),
         actions: [
-          if (isPhone)
-            ListenableBuilder(
-              listenable: themeController,
-              builder: (context, _) {
-                final isDark = Theme.of(context).brightness == Brightness.dark;
-                return IconButton(
-                  icon: Icon(isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined),
-                  tooltip: isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode',
-                  onPressed: () => themeController.toggleTheme(context),
-                );
-              },
-            ),
           IconButton(
             icon: const Icon(Icons.refresh_outlined),
             tooltip: 'Refresh Orders',

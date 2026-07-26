@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:wooden_mill_app/core/constants/app_constants.dart';
 import 'package:wooden_mill_app/core/theme/shadcn_tokens.dart';
 import 'package:wooden_mill_app/core/utils/responsive_layout.dart';
-import 'package:wooden_mill_app/main.dart';
 
 class AdaptiveScaffold extends StatefulWidget {
   final int selectedIndex;
@@ -80,30 +79,13 @@ class _AdaptiveScaffoldState extends State<AdaptiveScaffold> {
                       alignment: Alignment.bottomCenter,
                       child: Padding(
                         padding: const EdgeInsets.only(bottom: ShadTokens.spaceLg),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            ListenableBuilder(
-                              listenable: themeController,
-                              builder: (context, _) {
-                                final isDark = Theme.of(context).brightness == Brightness.dark;
-                                return IconButton(
-                                  icon: Icon(isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined),
-                                  tooltip: isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode',
-                                  onPressed: () => themeController.toggleTheme(context),
-                                );
-                              },
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              AppConstants.appVersionName,
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
+                        child: Text(
+                          AppConstants.appVersionName,
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ),
