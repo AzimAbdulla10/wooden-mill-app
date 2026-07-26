@@ -5,7 +5,6 @@ import 'package:wooden_mill_app/core/theme/shadcn_tokens.dart';
 import 'package:wooden_mill_app/core/utils/responsive_layout.dart';
 import 'package:wooden_mill_app/core/utils/volume_calculator.dart';
 import 'package:wooden_mill_app/main.dart';
-import 'package:wooden_mill_app/screens/history/history_screen.dart';
 import 'package:wooden_mill_app/screens/home/home_controller.dart';
 import 'package:wooden_mill_app/widgets/shad_badge.dart';
 import 'package:wooden_mill_app/widgets/shad_card.dart';
@@ -33,10 +32,41 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  void _navigateToHistory() {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (context) => const HistoryScreen()),
-    );
+  Future<void> _removeLogWithConfirmation(int index) async {
+    final log = _controller.logs[index];
+    final hasData = log.lengthController.text.isNotEmpty || log.girthController.text.isNotEmpty;
+
+    if (hasData) {
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(ShadTokens.radiusLg),
+            side: BorderSide(color: Theme.of(context).colorScheme.outline),
+          ),
+          title: const Text('Remove Log Entry?'),
+          content: Text('Are you sure you want to remove Log #${index + 1}? Entered dimensions will be lost.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.error,
+                foregroundColor: Theme.of(context).colorScheme.onError,
+              ),
+              child: const Text('Remove'),
+            ),
+          ],
+        ),
+      );
+
+      if (confirm != true) return;
+    }
+
+    _controller.removeLogAt(index);
   }
 
   void _submitForm() async {
@@ -106,6 +136,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isPhone = ResponsiveLayout.isPhone(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -124,21 +155,22 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
         actions: [
-          ListenableBuilder(
-            listenable: themeController,
-            builder: (context, _) {
-              final isDark = Theme.of(context).brightness == Brightness.dark;
-              return IconButton(
-                icon: Icon(isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined),
-                tooltip: isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode',
-                onPressed: () => themeController.toggleTheme(context),
-              );
-            },
-          ),
+          if (isPhone)
+            ListenableBuilder(
+              listenable: themeController,
+              builder: (context, _) {
+                final isDark = Theme.of(context).brightness == Brightness.dark;
+                return IconButton(
+                  icon: Icon(isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined),
+                  tooltip: isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode',
+                  onPressed: () => themeController.toggleTheme(context),
+                );
+              },
+            ),
           IconButton(
-            icon: const Icon(Icons.history_outlined),
-            tooltip: 'Order History',
-            onPressed: _navigateToHistory,
+            icon: const Icon(Icons.restart_alt_outlined),
+            tooltip: 'Clear Form',
+            onPressed: _controller.clearForm,
           ),
           const SizedBox(width: 8),
         ],
@@ -149,7 +181,7 @@ class _HomeScreenState extends State<HomeScreen> {
           return SafeArea(
             child: ResponsiveLayout(
               phone: _buildPhoneLayout(theme),
-              tablet: _buildTabletLayout(theme),
+              tablet: _buildBalancedTabletLayout(theme),
             ),
           );
         },
@@ -157,7 +189,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Mobile Layout: Clean single-column layout with section cards
+  // Phone Layout: Compact single-column workflow with sticky bottom summary bar
   Widget _buildPhoneLayout(ThemeData theme) {
     return Column(
       children: [
@@ -183,58 +215,50 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ),
-        _buildSubmitBar(theme),
+        _buildStickyPhoneSummaryBar(theme),
       ],
     );
   }
 
-  // Tablet Layout: Adaptive multi-column side-by-side pane layout
-  Widget _buildTabletLayout(ThemeData theme) {
+  // Tablet & Desktop Layout: Balanced 50% / 50% Two-Column Split
+  Widget _buildBalancedTabletLayout(ThemeData theme) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Left Column: Customer Details, Wood Selection & Live Metrics
-        SizedBox(
-          width: 380,
-          child: Container(
-            decoration: BoxDecoration(
-              border: Border(right: BorderSide(color: theme.colorScheme.outline, width: 1)),
-            ),
-            child: ListView(
-              padding: const EdgeInsets.all(ShadTokens.spaceLg),
-              children: [
-                _buildCustomerCard(theme),
-                const SizedBox(height: ShadTokens.spaceLg),
-                _buildWoodTypeCard(theme),
-                const SizedBox(height: ShadTokens.spaceLg),
-                _buildSummaryCard(theme),
-              ],
-            ),
+        // Left Column (50% Flex Width): Customer Info, Wood Selection & Log Entries List
+        Expanded(
+          flex: 1,
+          child: ListView(
+            padding: const EdgeInsets.all(ShadTokens.spaceLg),
+            children: [
+              _buildCustomerCard(theme),
+              const SizedBox(height: ShadTokens.spaceLg),
+              _buildWoodTypeCard(theme),
+              const SizedBox(height: ShadTokens.spaceLg),
+              _buildLogsHeader(theme),
+              const SizedBox(height: ShadTokens.spaceSm),
+              ...List.generate(
+                _controller.logs.length,
+                (index) => Padding(
+                  padding: const EdgeInsets.only(bottom: ShadTokens.spaceMd),
+                  child: _buildLogItem(index, theme),
+                ),
+              ),
+            ],
           ),
         ),
-        // Right Column: Dynamic Log Dimension Entry List & Action Bar
+        VerticalDivider(width: 1, thickness: 1, color: theme.colorScheme.outline),
+        // Right Column (50% Flex Width): Live Billing Summary & Save Action Button
         Expanded(
+          flex: 1,
           child: Column(
             children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  ShadTokens.spaceLg,
-                  ShadTokens.spaceLg,
-                  ShadTokens.spaceLg,
-                  ShadTokens.spaceSm,
-                ),
-                child: _buildLogsHeader(theme),
-              ),
               Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: ShadTokens.spaceLg),
-                  itemCount: _controller.logs.length,
-                  itemBuilder: (context, index) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: ShadTokens.spaceMd),
-                      child: _buildLogItem(index, theme),
-                    );
-                  },
+                child: ListView(
+                  padding: const EdgeInsets.all(ShadTokens.spaceLg),
+                  children: [
+                    _buildSummaryCard(theme),
+                  ],
                 ),
               ),
               _buildSubmitBar(theme),
@@ -254,7 +278,7 @@ class _HomeScreenState extends State<HomeScreen> {
           TextField(
             controller: _controller.customerNameController,
             decoration: const InputDecoration(
-              labelText: 'Customer Name',
+              labelText: 'Customer Name *',
               hintText: 'e.g. John Doe',
               prefixIcon: Icon(Icons.person_outline, size: 18),
             ),
@@ -265,7 +289,7 @@ class _HomeScreenState extends State<HomeScreen> {
           TextField(
             controller: _controller.phoneController,
             decoration: const InputDecoration(
-              labelText: 'Phone Number',
+              labelText: 'Phone Number (10 digits) *',
               hintText: '10 digit mobile number',
               prefixIcon: Icon(Icons.phone_outlined, size: 18),
               counterText: '',
@@ -282,7 +306,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildWoodTypeCard(ThemeData theme) {
     return ShadCard(
       title: 'Wood Category',
-      description: 'Select wood species for rate calculation',
+      description: 'Select wood species for unit rate calculation',
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: ShadTokens.spaceMd, vertical: 4),
         decoration: BoxDecoration(
@@ -375,7 +399,7 @@ class _HomeScreenState extends State<HomeScreen> {
               if (showRemove)
                 IconButton(
                   icon: Icon(Icons.close, size: 18, color: theme.colorScheme.onSurfaceVariant),
-                  onPressed: () => _controller.removeLogAt(index),
+                  onPressed: () => _removeLogWithConfirmation(index),
                   tooltip: 'Remove Log',
                   constraints: const BoxConstraints(),
                   padding: EdgeInsets.zero,
@@ -391,7 +415,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: TextField(
                   controller: log.lengthController,
                   decoration: InputDecoration(
-                    labelText: 'Length (feet)',
+                    labelText: 'Length (ft) *',
                     hintText: 'e.g. 10.5',
                     errorText: log.lengthError,
                   ),
@@ -404,7 +428,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: TextField(
                   controller: log.girthController,
                   decoration: InputDecoration(
-                    labelText: 'Girth (inches)',
+                    labelText: 'Girth (in) *',
                     hintText: 'e.g. 8.0',
                     errorText: log.girthError,
                   ),
@@ -462,7 +486,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildSummaryCard(ThemeData theme) {
     return ShadCard(
       title: 'Summary & Billing',
-      description: 'Calculations based on formulas & rates',
+      description: 'Live volume calculations & payment summary',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -519,6 +543,54 @@ class _HomeScreenState extends State<HomeScreen> {
             value: VolumeCalculator.formatCurrency(_controller.finalPrice),
             icon: Icons.account_balance_wallet_outlined,
             isHighlight: true,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStickyPhoneSummaryBar(ThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: ShadTokens.spaceLg, vertical: ShadTokens.spaceMd),
+      decoration: BoxDecoration(
+        color: theme.cardTheme.color,
+        border: Border(top: BorderSide(color: theme.colorScheme.outline, width: 1)),
+      ),
+      child: Row(
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '${VolumeCalculator.formatVolume(_controller.totalVolume)} cft',
+                style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant),
+              ),
+              Text(
+                VolumeCalculator.formatCurrency(_controller.finalPrice),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
+              ),
+            ],
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: SizedBox(
+              height: 44,
+              child: ElevatedButton.icon(
+                onPressed: _controller.isSaving ? null : _submitForm,
+                icon: _controller.isSaving
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                      )
+                    : const Icon(Icons.check, size: 18),
+                label: Text(
+                  _controller.isSaving ? 'SAVING...' : 'SAVE ORDER',
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+            ),
           ),
         ],
       ),
