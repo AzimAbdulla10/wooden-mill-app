@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:wooden_mill_app/core/constants/app_constants.dart';
 import 'package:wooden_mill_app/core/theme/shadcn_tokens.dart';
 import 'package:wooden_mill_app/core/utils/pdf_invoice_helper.dart';
@@ -7,7 +8,6 @@ import 'package:wooden_mill_app/core/utils/responsive_layout.dart';
 import 'package:wooden_mill_app/core/utils/volume_calculator.dart';
 import 'package:wooden_mill_app/main.dart';
 import 'package:wooden_mill_app/models/order.dart';
-import 'package:wooden_mill_app/screens/details/details_screen.dart';
 import 'package:wooden_mill_app/screens/home/home_controller.dart';
 import 'package:wooden_mill_app/widgets/shad_badge.dart';
 import 'package:wooden_mill_app/widgets/shad_card.dart';
@@ -813,9 +813,7 @@ class _PostSaveReceiptDialog extends StatelessWidget {
                   child: ElevatedButton.icon(
                     onPressed: () {
                       Navigator.of(context).pop();
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (context) => DetailsScreen(orderId: savedOrder.id!)),
-                      );
+                      context.push('/history/${savedOrder.id}');
                     },
                     icon: const Icon(Icons.visibility_outlined, size: 16),
                     label: const Text('VIEW DETAILS'),

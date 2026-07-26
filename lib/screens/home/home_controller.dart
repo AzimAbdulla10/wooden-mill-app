@@ -3,6 +3,7 @@ import 'package:wooden_mill_app/core/constants/app_constants.dart';
 import 'package:wooden_mill_app/core/utils/volume_calculator.dart';
 import 'package:wooden_mill_app/models/log_dimension.dart';
 import 'package:wooden_mill_app/models/order.dart';
+import 'package:wooden_mill_app/repositories/draft_repository.dart';
 import 'package:wooden_mill_app/repositories/order_repository.dart';
 
 class LogInput {
@@ -25,6 +26,7 @@ class LogInput {
 
 class HomeController extends ChangeNotifier {
   final OrderRepository _repository;
+  final DraftRepository _draftRepository;
 
   final TextEditingController customerNameController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
@@ -44,14 +46,22 @@ class HomeController extends ChangeNotifier {
   bool _isSaving = false;
   String? _errorMessage;
 
-  HomeController({OrderRepository? repository})
-      : _repository = repository ?? OrderRepository() {
+  HomeController({
+    OrderRepository? repository,
+    DraftRepository? draftRepository,
+  })  : _repository = repository ?? OrderRepository(),
+        _draftRepository = draftRepository ?? DraftRepository() {
     // Add initial log
     addLog();
     
-    // Add listeners to customer details & charges to update UI/calculations
+    // Add listeners to customer details & charges to update UI/calculations & auto-save draft
+    customerNameController.addListener(_autoSaveDraft);
+    phoneController.addListener(_autoSaveDraft);
     cuttingChargeController.addListener(_onChargeOrDiscountChanged);
     discountController.addListener(_onChargeOrDiscountChanged);
+
+    // Restore unfinished draft from disk if present
+    _restoreDraft();
   }
 
   // Getters
@@ -69,6 +79,7 @@ class HomeController extends ChangeNotifier {
     if (_selectedWoodType != value) {
       _selectedWoodType = value;
       calculateTotals();
+      _autoSaveDraft();
     }
   }
 
@@ -76,19 +87,30 @@ class HomeController extends ChangeNotifier {
     _cuttingCharge = double.tryParse(cuttingChargeController.text) ?? 0.0;
     _discount = double.tryParse(discountController.text) ?? 0.0;
     _finalPrice = _subtotal + _cuttingCharge - _discount;
+    _autoSaveDraft();
     notifyListeners();
   }
 
   /// Adds a new log row if the current count is under max limit
-  void addLog() {
+  void addLog({String length = '', String girth = ''}) {
     if (_logs.length >= AppConstants.maxLogs) return;
 
     final newLog = LogInput();
-    newLog.lengthController.addListener(() => _calculateLog(newLog));
-    newLog.girthController.addListener(() => _calculateLog(newLog));
+    if (length.isNotEmpty) newLog.lengthController.text = length;
+    if (girth.isNotEmpty) newLog.girthController.text = girth;
+
+    newLog.lengthController.addListener(() {
+      _calculateLog(newLog);
+      _autoSaveDraft();
+    });
+    newLog.girthController.addListener(() {
+      _calculateLog(newLog);
+      _autoSaveDraft();
+    });
+
     _logs.add(newLog);
-    
     calculateTotals();
+    _autoSaveDraft();
   }
 
   /// Removes a log row if the current count is above min limit
@@ -99,6 +121,7 @@ class HomeController extends ChangeNotifier {
     _logs.removeAt(index);
     
     calculateTotals();
+    _autoSaveDraft();
   }
 
   /// Calculates volume and price for a single log row
@@ -133,7 +156,6 @@ class HomeController extends ChangeNotifier {
     _subtotal = 0.0;
 
     for (final log in _logs) {
-      // Re-evaluate price in case wood rate changed
       final length = double.tryParse(log.lengthController.text) ?? 0.0;
       final girth = double.tryParse(log.girthController.text) ?? 0.0;
       
@@ -154,6 +176,68 @@ class HomeController extends ChangeNotifier {
     _finalPrice = _subtotal + _cuttingCharge - _discount;
 
     notifyListeners();
+  }
+
+  /// Restores an unfinished draft from persistent local storage
+  Future<void> _restoreDraft() async {
+    final draft = await _draftRepository.loadDraft();
+    if (draft == null) return;
+
+    if (draft.customerName.isNotEmpty) {
+      customerNameController.text = draft.customerName;
+    }
+    if (draft.phone.isNotEmpty) {
+      phoneController.text = draft.phone;
+    }
+    if (draft.cuttingCharge.isNotEmpty) {
+      cuttingChargeController.text = draft.cuttingCharge;
+    }
+    if (draft.discount.isNotEmpty) {
+      discountController.text = draft.discount;
+    }
+
+    final wood = AppConstants.woodTypes.firstWhere(
+      (w) => w.name == draft.woodType || w.displayName == draft.woodType,
+      orElse: () => AppConstants.woodTypes.first,
+    );
+    _selectedWoodType = wood;
+
+    if (draft.logs.isNotEmpty) {
+      for (final log in _logs) {
+        log.dispose();
+      }
+      _logs.clear();
+
+      for (final logData in draft.logs) {
+        addLog(
+          length: logData['length'] ?? '',
+          girth: logData['girth'] ?? '',
+        );
+      }
+    }
+
+    calculateTotals();
+  }
+
+  /// Auto-saves the active draft to disk
+  void _autoSaveDraft() {
+    final logMaps = _logs
+        .map((l) => {
+              'length': l.lengthController.text,
+              'girth': l.girthController.text,
+            })
+        .toList();
+
+    final draft = DraftOrderData(
+      customerName: customerNameController.text,
+      phone: phoneController.text,
+      woodType: _selectedWoodType.name,
+      cuttingCharge: cuttingChargeController.text,
+      discount: discountController.text,
+      logs: logMaps,
+    );
+
+    _draftRepository.saveDraft(draft);
   }
 
   /// Validates the form fields. Returns true if valid, false otherwise.
@@ -235,7 +319,6 @@ class HomeController extends ChangeNotifier {
   }
 
   /// Saves the current order to SQLite.
-  /// Pre-condition: validateForm() must be called and return true.
   Future<OrderModel?> submitOrder() async {
     _isSaving = true;
     _errorMessage = null;
@@ -268,6 +351,8 @@ class HomeController extends ChangeNotifier {
       );
 
       final orderId = await _repository.saveOrder(order);
+      await _draftRepository.clearDraft();
+
       _isSaving = false;
       notifyListeners();
       return order.copyWith(id: orderId);
@@ -279,7 +364,7 @@ class HomeController extends ChangeNotifier {
     }
   }
 
-  /// Resets the form to its initial state
+  /// Resets the form to its initial state and clears persistent draft
   void clearForm() {
     customerNameController.clear();
     phoneController.clear();
@@ -287,7 +372,6 @@ class HomeController extends ChangeNotifier {
     discountController.text = '0';
     _selectedWoodType = AppConstants.woodTypes.first;
     
-    // Clear and reset logs to 1
     for (final log in _logs) {
       log.dispose();
     }
@@ -295,6 +379,7 @@ class HomeController extends ChangeNotifier {
     addLog();
 
     _errorMessage = null;
+    _draftRepository.clearDraft();
     calculateTotals();
   }
 

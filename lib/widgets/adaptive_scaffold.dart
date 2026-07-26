@@ -25,6 +25,13 @@ class _AdaptiveScaffoldState extends State<AdaptiveScaffold> {
     final theme = Theme.of(context);
     final isTabletOrDesktop = !ResponsiveLayout.isPhone(context);
 
+    final Widget activeBody = widget.bodyPages.length == 1
+        ? widget.bodyPages.first
+        : IndexedStack(
+            index: widget.selectedIndex,
+            children: widget.bodyPages,
+          );
+
     if (isTabletOrDesktop) {
       return Scaffold(
         body: Row(
@@ -83,10 +90,7 @@ class _AdaptiveScaffoldState extends State<AdaptiveScaffold> {
             VerticalDivider(width: 1, thickness: 1, color: theme.colorScheme.outline),
             // Main Body Content
             Expanded(
-              child: IndexedStack(
-                index: widget.selectedIndex,
-                children: widget.bodyPages,
-              ),
+              child: activeBody,
             ),
           ],
         ),
@@ -95,10 +99,7 @@ class _AdaptiveScaffoldState extends State<AdaptiveScaffold> {
 
     // Mobile Viewport with Bottom Navigation Bar
     return Scaffold(
-      body: IndexedStack(
-        index: widget.selectedIndex,
-        children: widget.bodyPages,
-      ),
+      body: activeBody,
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           border: Border(top: BorderSide(color: theme.colorScheme.outline, width: 1)),

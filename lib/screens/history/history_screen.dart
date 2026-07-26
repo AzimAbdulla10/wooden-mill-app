@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:wooden_mill_app/core/theme/shadcn_tokens.dart';
 import 'package:wooden_mill_app/core/utils/responsive_layout.dart';
@@ -50,11 +51,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   void _onOrderSelected(OrderModel order) {
     if (ResponsiveLayout.isPhone(context)) {
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => DetailsScreen(orderId: order.id!),
-        ),
-      ).then((_) => _loadOrders());
+      context.push('/history/${order.id}').then((_) => _loadOrders());
     } else {
       setState(() {
         _selectedOrder = order;

@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wooden_mill_app/core/constants/app_constants.dart';
-import 'package:wooden_mill_app/core/utils/volume_calculator.dart';
 import 'package:wooden_mill_app/core/theme/theme_controller.dart';
-import 'package:wooden_mill_app/screens/home/home_controller.dart';
-import 'package:wooden_mill_app/repositories/order_repository.dart';
+import 'package:wooden_mill_app/core/utils/volume_calculator.dart';
 import 'package:wooden_mill_app/models/order.dart';
+import 'package:wooden_mill_app/repositories/draft_repository.dart';
+import 'package:wooden_mill_app/repositories/order_repository.dart';
+import 'package:wooden_mill_app/screens/home/home_controller.dart';
 
 // Mock repository to test HomeController without actual SQLite DB
 class MockOrderRepository extends OrderRepository {
@@ -17,6 +18,25 @@ class MockOrderRepository extends OrderRepository {
     saveCalled = true;
     savedOrder = order;
     return 42; // Mocked ID
+  }
+}
+
+class MockDraftRepository extends DraftRepository {
+  DraftOrderData? currentDraft;
+
+  @override
+  Future<void> saveDraft(DraftOrderData draft) async {
+    currentDraft = draft;
+  }
+
+  @override
+  Future<DraftOrderData?> loadDraft() async {
+    return currentDraft;
+  }
+
+  @override
+  Future<void> clearDraft() async {
+    currentDraft = null;
   }
 }
 
@@ -44,10 +64,15 @@ void main() {
   group('HomeController State Tests', () {
     late HomeController controller;
     late MockOrderRepository mockRepository;
+    late MockDraftRepository mockDraftRepository;
 
     setUp(() {
       mockRepository = MockOrderRepository();
-      controller = HomeController(repository: mockRepository);
+      mockDraftRepository = MockDraftRepository();
+      controller = HomeController(
+        repository: mockRepository,
+        draftRepository: mockDraftRepository,
+      );
     });
 
     tearDown(() {
@@ -81,9 +106,6 @@ void main() {
       // Update length and girth
       log.lengthController.text = '10.0';
       log.girthController.text = '4.0';
-      // Trigger listener manual callback simulation (or the listener attached handles it)
-      // Volume = (10 * 4 * 4) / 16 = 10.0
-      // Price for Teak = 10.0 * 4800 = 48000.0
       
       expect(controller.totalVolume, equals(10.0));
       expect(controller.subtotal, equals(48000.0));
@@ -120,7 +142,7 @@ void main() {
       expect(controller.errorMessage, isNull);
     });
 
-    test('submitting order calls repository save', () async {
+    test('submitting order calls repository save and clears draft', () async {
       controller.customerNameController.text = 'Alice';
       controller.phoneController.text = '9876543210';
       controller.logs[0].lengthController.text = '10';
@@ -133,6 +155,7 @@ void main() {
       expect(mockRepository.saveCalled, isTrue);
       expect(mockRepository.savedOrder?.customerName, equals('Alice'));
       expect(mockRepository.savedOrder?.finalPrice, equals(48000.0));
+      expect(mockDraftRepository.currentDraft, isNull);
     });
   });
 
