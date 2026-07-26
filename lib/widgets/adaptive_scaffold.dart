@@ -38,13 +38,14 @@ class _AdaptiveScaffoldState extends State<AdaptiveScaffold> {
               indicatorColor: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
               leading: Padding(
                 padding: const EdgeInsets.symmetric(vertical: ShadTokens.spaceLg),
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primary,
-                    borderRadius: BorderRadius.circular(ShadTokens.radiusSm),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(ShadTokens.radiusSm),
+                  child: Image.asset(
+                    'assets/icon/app_icon.png',
+                    width: 32,
+                    height: 32,
+                    fit: BoxFit.cover,
                   ),
-                  child: Icon(Icons.square_foot, size: 20, color: theme.colorScheme.onPrimary),
                 ),
               ),
               trailing: Expanded(

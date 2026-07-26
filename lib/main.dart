@@ -21,7 +21,7 @@ class MyApp extends StatelessWidget {
       listenable: themeController,
       builder: (context, child) {
         return MaterialApp(
-          title: 'Wooden Mill Calculator',
+          title: 'Timbr',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,

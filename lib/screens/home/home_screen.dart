@@ -138,16 +138,17 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: Row(
           children: [
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primary,
-                borderRadius: BorderRadius.circular(ShadTokens.radiusSm),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(ShadTokens.radiusSm),
+              child: Image.asset(
+                'assets/icon/app_icon.png',
+                width: 26,
+                height: 26,
+                fit: BoxFit.cover,
               ),
-              child: Icon(Icons.square_foot, size: 18, color: theme.colorScheme.onPrimary),
             ),
             const SizedBox(width: 10),
-            const Text('Wooden Mill Calculator'),
+            const Text('Timbr'),
           ],
         ),
         actions: [

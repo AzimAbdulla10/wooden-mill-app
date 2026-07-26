@@ -31,7 +31,7 @@ class PdfInvoiceHelper {
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
                       pw.Text(
-                        'WOODEN MILL RECEIPT',
+                        'TIMBR RECEIPT',
                         style: pw.TextStyle(
                           fontSize: 22,
                           fontWeight: pw.FontWeight.bold,
@@ -154,7 +154,7 @@ class PdfInvoiceHelper {
               pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
-                  pw.Text('Wooden Mill Calculator - Commercial Report', style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600)),
+                  pw.Text('Timbr - Commercial Timber Report', style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600)),
                   pw.Text('Thank you for your business!', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.grey800)),
                 ],
               ),
