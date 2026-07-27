@@ -92,9 +92,9 @@ class _AdaptiveScaffoldState extends State<AdaptiveScaffold> {
                   ),
                   destinations: const [
                     NavigationRailDestination(
-                      icon: Icon(Icons.calculate_outlined),
-                      selectedIcon: Icon(Icons.calculate),
-                      label: Text('Calculator'),
+                      icon: Icon(Icons.note_add_outlined),
+                      selectedIcon: Icon(Icons.note_add),
+                      label: Text('New Order'),
                     ),
                     NavigationRailDestination(
                       icon: Icon(Icons.history_outlined),
@@ -130,9 +130,9 @@ class _AdaptiveScaffoldState extends State<AdaptiveScaffold> {
                 indicatorColor: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
                 destinations: const [
                   NavigationDestination(
-                    icon: Icon(Icons.calculate_outlined),
-                    selectedIcon: Icon(Icons.calculate),
-                    label: 'Calculator',
+                    icon: Icon(Icons.note_add_outlined),
+                    selectedIcon: Icon(Icons.note_add),
+                    label: 'New Order',
                   ),
                   NavigationDestination(
                     icon: Icon(Icons.history_outlined),

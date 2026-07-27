@@ -89,4 +89,13 @@ class OrderRepository {
     final logs = logMaps.map((m) => LogDimension.fromMap(m)).toList();
     return OrderModel.fromMap(orderMaps.first, logs: logs);
   }
+
+  /// Deletes all orders and their associated log dimensions in a single transaction.
+  Future<void> deleteAllOrders() async {
+    final db = await _dbHelper.database;
+    await db.transaction((txn) async {
+      await txn.delete('LogDimensions');
+      await txn.delete('Orders');
+    });
+  }
 }

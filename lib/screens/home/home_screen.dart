@@ -146,7 +146,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const SizedBox(width: 10),
-            const Text('Timbr'),
+            const Text('New Order'),
             const SizedBox(width: 8),
             ShadBadge(
               label: AppConstants.appVersionName,
@@ -256,7 +256,6 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildCustomerCard(ThemeData theme) {
     return ShadCard(
       title: 'Customer Details',
-      description: 'Enter customer contact details for billing',
       child: Column(
         children: [
           TextField(
@@ -290,7 +289,6 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildWoodTypeCard(ThemeData theme) {
     return ShadCard(
       title: 'Wood Category',
-      description: 'Select wood species for unit rate calculation',
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: ShadTokens.spaceMd, vertical: 4),
         decoration: BoxDecoration(
@@ -470,7 +468,6 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildSummaryCard(ThemeData theme) {
     return ShadCard(
       title: 'Summary & Billing',
-      description: 'Live volume calculations & payment summary',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

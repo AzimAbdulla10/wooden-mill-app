@@ -10,6 +10,16 @@ import 'package:wooden_mill_app/screens/details/details_screen.dart';
 import 'package:wooden_mill_app/widgets/shad_badge.dart';
 import 'package:wooden_mill_app/widgets/shad_card.dart';
 
+enum DateFilterOption {
+  all('All Time'),
+  today('Today'),
+  thisWeek('This Week'),
+  thisMonth('This Month');
+
+  final String label;
+  const DateFilterOption(this.label);
+}
+
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
 
@@ -24,6 +34,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
   late Future<List<OrderModel>> _ordersFuture;
   OrderModel? _selectedOrder;
   String _searchQuery = '';
+  DateFilterOption _selectedDateFilter = DateFilterOption.all;
+  String _selectedWoodFilter = 'All';
 
   @override
   void initState() {
@@ -59,12 +71,41 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   List<OrderModel> _filterOrders(List<OrderModel> orders) {
-    if (_searchQuery.isEmpty) return orders;
+    final now = DateTime.now();
+
     return orders.where((order) {
-      final name = order.customerName.toLowerCase();
-      final phone = order.phone.toLowerCase();
-      final wood = order.woodType.toLowerCase();
-      return name.contains(_searchQuery) || phone.contains(_searchQuery) || wood.contains(_searchQuery);
+      // 1. Text Search Filter
+      if (_searchQuery.isNotEmpty) {
+        final name = order.customerName.toLowerCase();
+        final phone = order.phone.toLowerCase();
+        final wood = order.woodType.toLowerCase();
+        final matchesQuery = name.contains(_searchQuery) || phone.contains(_searchQuery) || wood.contains(_searchQuery);
+        if (!matchesQuery) return false;
+      }
+
+      // 2. Wood Species Filter
+      if (_selectedWoodFilter != 'All') {
+        if (order.woodType.toLowerCase() != _selectedWoodFilter.toLowerCase()) {
+          return false;
+        }
+      }
+
+      // 3. Date Filter
+      if (_selectedDateFilter == DateFilterOption.today) {
+        final isToday = order.dateTime.year == now.year &&
+            order.dateTime.month == now.month &&
+            order.dateTime.day == now.day;
+        if (!isToday) return false;
+      } else if (_selectedDateFilter == DateFilterOption.thisWeek) {
+        final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
+        final beginningOfWeek = DateTime(startOfWeek.year, startOfWeek.month, startOfWeek.day);
+        if (order.dateTime.isBefore(beginningOfWeek)) return false;
+      } else if (_selectedDateFilter == DateFilterOption.thisMonth) {
+        final isThisMonth = order.dateTime.year == now.year && order.dateTime.month == now.month;
+        if (!isThisMonth) return false;
+      }
+
+      return true;
     }).toList();
   }
 
@@ -123,7 +164,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   const SizedBox(height: 16),
                   const Text('No past orders stored', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 6),
-                  Text('Submit orders from the calculator to view them here.', style: TextStyle(color: theme.colorScheme.onSurfaceVariant)),
+                  Text('Submit orders from New Order to view them here.', style: TextStyle(color: theme.colorScheme.onSurfaceVariant)),
                 ],
               ),
             );
@@ -138,6 +179,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
             phone: Column(
               children: [
                 _buildSearchBar(theme),
+                _buildFilterChips(theme),
                 Expanded(child: _buildOrderList(filteredOrders, theme)),
               ],
             ),
@@ -150,6 +192,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   child: Column(
                     children: [
                       _buildSearchBar(theme),
+                      _buildFilterChips(theme),
                       Expanded(child: _buildOrderList(filteredOrders, theme)),
                     ],
                   ),
@@ -177,7 +220,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   Widget _buildSearchBar(ThemeData theme) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(ShadTokens.spaceLg, ShadTokens.spaceLg, ShadTokens.spaceLg, ShadTokens.spaceSm),
+      padding: const EdgeInsets.fromLTRB(ShadTokens.spaceLg, ShadTokens.spaceLg, ShadTokens.spaceLg, ShadTokens.spaceXs),
       child: TextField(
         controller: _searchController,
         decoration: InputDecoration(
@@ -193,6 +236,60 @@ class _HistoryScreenState extends State<HistoryScreen> {
               : null,
           contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         ),
+      ),
+    );
+  }
+
+  Widget _buildFilterChips(ThemeData theme) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: ShadTokens.spaceLg, vertical: 4),
+      child: Row(
+        children: [
+          // Date Filter Popup Menu Button / Chips
+          PopupMenuButton<DateFilterOption>(
+            initialValue: _selectedDateFilter,
+            onSelected: (option) {
+              setState(() {
+                _selectedDateFilter = option;
+              });
+            },
+            child: Chip(
+              avatar: const Icon(Icons.calendar_today_outlined, size: 14),
+              label: Text(_selectedDateFilter.label, style: const TextStyle(fontSize: 12)),
+              backgroundColor: _selectedDateFilter != DateFilterOption.all
+                  ? theme.colorScheme.primaryContainer.withValues(alpha: 0.4)
+                  : null,
+              side: BorderSide(color: theme.colorScheme.outline.withValues(alpha: 0.6)),
+            ),
+            itemBuilder: (context) => DateFilterOption.values.map((opt) {
+              return PopupMenuItem(
+                value: opt,
+                child: Text(opt.label),
+              );
+            }).toList(),
+          ),
+          const SizedBox(width: 8),
+
+          // Wood Species Filter Chips
+          ...['All', 'Teak', 'Coconut', 'Others'].map((wood) {
+            final isSelected = _selectedWoodFilter == wood;
+            return Padding(
+              padding: const EdgeInsets.only(right: 6.0),
+              child: FilterChip(
+                selected: isSelected,
+                label: Text(wood, style: TextStyle(fontSize: 12, color: isSelected ? theme.colorScheme.primary : null)),
+                onSelected: (selected) {
+                  setState(() {
+                    _selectedWoodFilter = wood;
+                  });
+                },
+                selectedColor: theme.colorScheme.primaryContainer.withValues(alpha: 0.4),
+                side: BorderSide(color: isSelected ? theme.colorScheme.primary : theme.colorScheme.outline.withValues(alpha: 0.6)),
+              ),
+            );
+          }),
+        ],
       ),
     );
   }
@@ -252,37 +349,35 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   ),
                   const SizedBox(height: 6),
                   Row(
-                    children: [
-                      Icon(Icons.phone_outlined, size: 14, color: theme.colorScheme.onSurfaceVariant),
-                      const SizedBox(width: 4),
-                      Text(
-                        order.phone,
-                        style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13),
-                      ),
-                      const Spacer(),
-                      ShadBadge(
-                        label: order.woodType,
-                        variant: ShadBadgeVariant.secondary,
-                      ),
-                    ],
-                  ),
-                  const Divider(height: 16),
-                  Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.layers_outlined, size: 14, color: theme.colorScheme.onSurfaceVariant),
+                          Icon(Icons.phone_outlined, size: 13, color: theme.colorScheme.onSurfaceVariant),
                           const SizedBox(width: 4),
                           Text(
-                            '${order.numberOfLogs} ${order.numberOfLogs == 1 ? "log" : "logs"} • ${VolumeCalculator.formatVolume(order.totalVolume)} cft',
-                            style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12),
+                            order.phone,
+                            style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant),
                           ),
                         ],
                       ),
+                      ShadBadge(
+                        label: order.woodType,
+                        variant: ShadBadgeVariant.outline,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
                       Text(
-                        DateFormat('dd MMM, hh:mm a').format(order.dateTime),
-                        style: TextStyle(color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8), fontSize: 11),
+                        DateFormat('dd MMM yyyy, hh:mm a').format(order.dateTime),
+                        style: TextStyle(fontSize: 11, color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8)),
+                      ),
+                      Text(
+                        '${order.logs.length} ${order.logs.length == 1 ? "log" : "logs"} (${VolumeCalculator.formatVolume(order.totalVolume)} cft)',
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: theme.colorScheme.onSurfaceVariant),
                       ),
                     ],
                   ),

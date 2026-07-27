@@ -85,7 +85,6 @@ class _DetailsScreenState extends State<DetailsScreen> {
           children: [
             ShadCard(
               title: 'Customer Details',
-              description: 'Customer contact and wood classification',
               action: ShadBadge(
                 label: order.woodType,
                 variant: ShadBadgeVariant.defaultVariant,
@@ -105,7 +104,6 @@ class _DetailsScreenState extends State<DetailsScreen> {
             // Logs Table Card
             ShadCard(
               title: 'Log Dimensions Breakdown',
-              description: '${order.logs.length} ${order.logs.length == 1 ? "log entry" : "log entries"} recorded',
               action: OutlinedButton.icon(
                 onPressed: () => PdfInvoiceHelper.printOrderInvoice(context, order),
                 icon: const Icon(Icons.print_outlined, size: 16),
@@ -149,7 +147,6 @@ class _DetailsScreenState extends State<DetailsScreen> {
             // Financial Summary Card
             ShadCard(
               title: 'Financial Breakdown',
-              description: 'Subtotals, charges, and final payable total',
               child: Column(
                 children: [
                   Row(
