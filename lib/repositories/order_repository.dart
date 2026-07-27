@@ -90,6 +90,23 @@ class OrderRepository {
     return OrderModel.fromMap(orderMaps.first, logs: logs);
   }
 
+  /// Deletes a specific order and its associated log dimensions by ID.
+  Future<void> deleteOrderById(int orderId) async {
+    final db = await _dbHelper.database;
+    await db.transaction((txn) async {
+      await txn.delete(
+        'LogDimensions',
+        where: 'orderId = ?',
+        whereArgs: [orderId],
+      );
+      await txn.delete(
+        'Orders',
+        where: 'id = ?',
+        whereArgs: [orderId],
+      );
+    });
+  }
+
   /// Deletes all orders and their associated log dimensions in a single transaction.
   Future<void> deleteAllOrders() async {
     final db = await _dbHelper.database;

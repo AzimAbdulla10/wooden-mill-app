@@ -5,7 +5,6 @@ import 'package:wooden_mill_app/core/theme/shadcn_tokens.dart';
 import 'package:wooden_mill_app/core/theme/theme_controller.dart';
 import 'package:wooden_mill_app/main.dart';
 import 'package:wooden_mill_app/repositories/backup_repository.dart';
-import 'package:wooden_mill_app/repositories/order_repository.dart';
 import 'package:wooden_mill_app/widgets/shad_badge.dart';
 import 'package:wooden_mill_app/widgets/shad_card.dart';
 
@@ -100,49 +99,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         );
       }
-    }
-  }
-
-  void _handleDeleteAllOrders() async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(ShadTokens.radiusLg),
-          side: BorderSide(color: Theme.of(context).colorScheme.outline),
-        ),
-        title: const Text('Delete All Order Records?'),
-        content: const Text(
-          'This will permanently delete all saved customer orders and log measurement history from your device. This action cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
-              foregroundColor: Theme.of(context).colorScheme.onError,
-            ),
-            child: const Text('Delete All Records'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm == true) {
-      final repo = OrderRepository();
-      await repo.deleteAllOrders();
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('All order records have been permanently deleted.'),
-          backgroundColor: Theme.of(context).colorScheme.error,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
     }
   }
 
@@ -335,20 +291,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ),
                         ),
                       ],
-                    ),
-                    const SizedBox(height: ShadTokens.spaceMd),
-                    Divider(color: theme.colorScheme.outline.withValues(alpha: 0.5)),
-                    const SizedBox(height: 4),
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: _handleDeleteAllOrders,
-                        icon: Icon(Icons.delete_forever_outlined, size: 16, color: theme.colorScheme.error),
-                        label: Text('Delete All Order Records', style: TextStyle(color: theme.colorScheme.error)),
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(color: theme.colorScheme.error.withValues(alpha: 0.5)),
-                        ),
-                      ),
                     ),
                   ],
                 ),

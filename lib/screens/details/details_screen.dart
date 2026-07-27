@@ -12,11 +12,13 @@ import 'package:wooden_mill_app/widgets/shad_stat_tile.dart';
 class DetailsScreen extends StatefulWidget {
   final int orderId;
   final bool isEmbedded;
+  final VoidCallback? onDeleted;
 
   const DetailsScreen({
     super.key,
     required this.orderId,
     this.isEmbedded = false,
+    this.onDeleted,
   });
 
   @override
@@ -45,6 +47,54 @@ class _DetailsScreenState extends State<DetailsScreen> {
     setState(() {
       _orderFuture = _repository.getOrderById(widget.orderId);
     });
+  }
+
+  void _handleDeleteOrder(BuildContext context, OrderModel order) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(ShadTokens.radiusLg),
+          side: BorderSide(color: Theme.of(context).colorScheme.outline),
+        ),
+        title: const Text('Delete Order Record?'),
+        content: Text(
+          'Are you sure you want to delete the order record for ${order.customerName}? This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await _repository.deleteOrderById(order.id!);
+      if (!context.mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Order record deleted successfully'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+
+      if (widget.onDeleted != null) {
+        widget.onDeleted!();
+      } else if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop(true);
+      }
+    }
   }
 
   @override
@@ -85,9 +135,20 @@ class _DetailsScreenState extends State<DetailsScreen> {
           children: [
             ShadCard(
               title: 'Customer Details',
-              action: ShadBadge(
-                label: order.woodType,
-                variant: ShadBadgeVariant.defaultVariant,
+              action: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ShadBadge(
+                    label: order.woodType,
+                    variant: ShadBadgeVariant.defaultVariant,
+                  ),
+                  const SizedBox(width: 6),
+                  IconButton(
+                    icon: Icon(Icons.delete_outline, color: theme.colorScheme.error, size: 20),
+                    tooltip: 'Delete Order Record',
+                    onPressed: () => _handleDeleteOrder(context, order),
+                  ),
+                ],
               ),
               child: Column(
                 children: [
@@ -174,7 +235,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
                       Expanded(
                         child: ShadStatTile(
                           label: 'Cutting Charge',
-                          value: '+ ${VolumeCalculator.formatCurrency(order.cuttingCharge)}',
+                          value: VolumeCalculator.formatCurrency(order.cuttingCharge),
                         ),
                       ),
                       const SizedBox(width: ShadTokens.spaceMd),
@@ -211,6 +272,11 @@ class _DetailsScreenState extends State<DetailsScreen> {
                 icon: const Icon(Icons.print_outlined),
                 tooltip: 'Print Receipt (PDF)',
                 onPressed: () => PdfInvoiceHelper.printOrderInvoice(context, order),
+              ),
+              IconButton(
+                icon: Icon(Icons.delete_outline, color: theme.colorScheme.error),
+                tooltip: 'Delete Order Record',
+                onPressed: () => _handleDeleteOrder(context, order),
               ),
               const SizedBox(width: 8),
             ],

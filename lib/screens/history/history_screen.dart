@@ -202,7 +202,16 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 Expanded(
                   flex: 55,
                   child: _selectedOrder != null
-                      ? DetailsScreen(orderId: _selectedOrder!.id!, isEmbedded: true)
+                      ? DetailsScreen(
+                          orderId: _selectedOrder!.id!,
+                          isEmbedded: true,
+                          onDeleted: () {
+                            setState(() {
+                              _selectedOrder = null;
+                            });
+                            _loadOrders();
+                          },
+                        )
                       : Center(
                           child: Text(
                             'Select an order to view details',
