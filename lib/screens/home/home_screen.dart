@@ -134,26 +134,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Row(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(ShadTokens.radiusSm),
-              child: Image.asset(
-                'assets/icon/app_icon.png',
-                width: 26,
-                height: 26,
-                fit: BoxFit.cover,
-              ),
-            ),
-            const SizedBox(width: 10),
-            const Text('New Order'),
-            const SizedBox(width: 8),
-            ShadBadge(
-              label: AppConstants.appVersionName,
-              variant: ShadBadgeVariant.outline,
-            ),
-          ],
-        ),
+        title: const Text('New Order'),
         actions: [
           IconButton(
             icon: const Icon(Icons.restart_alt_outlined),

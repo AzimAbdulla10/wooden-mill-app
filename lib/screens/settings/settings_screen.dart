@@ -305,7 +305,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     _buildInfoRow('Application Name', 'Timbr', theme),
                     _buildInfoRow('Version', AppConstants.appVersionName, theme),
                     _buildInfoRow('Build Number', AppConstants.appBuildNumber, theme),
-                    _buildInfoRow('Purpose', 'Timber measurement, pricing and order management', theme),
                   ],
                 ),
               ),

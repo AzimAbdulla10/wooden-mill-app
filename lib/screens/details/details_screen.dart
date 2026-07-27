@@ -142,12 +142,19 @@ class _DetailsScreenState extends State<DetailsScreen> {
                     label: order.woodType,
                     variant: ShadBadgeVariant.defaultVariant,
                   ),
-                  const SizedBox(width: 6),
-                  IconButton(
-                    icon: Icon(Icons.delete_outline, color: theme.colorScheme.error, size: 20),
-                    tooltip: 'Delete Order Record',
-                    onPressed: () => _handleDeleteOrder(context, order),
-                  ),
+                  if (widget.isEmbedded) ...[
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: const Icon(Icons.print_outlined, size: 20),
+                      tooltip: 'Print Receipt (PDF)',
+                      onPressed: () => PdfInvoiceHelper.printOrderInvoice(context, order),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.delete_outline, color: theme.colorScheme.error, size: 20),
+                      tooltip: 'Delete Order Record',
+                      onPressed: () => _handleDeleteOrder(context, order),
+                    ),
+                  ],
                 ],
               ),
               child: Column(
@@ -165,15 +172,6 @@ class _DetailsScreenState extends State<DetailsScreen> {
             // Logs Table Card
             ShadCard(
               title: 'Log Dimensions Breakdown',
-              action: OutlinedButton.icon(
-                onPressed: () => PdfInvoiceHelper.printOrderInvoice(context, order),
-                icon: const Icon(Icons.print_outlined, size: 16),
-                label: const Text('Print Receipt'),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  minimumSize: Size.zero,
-                ),
-              ),
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: DataTable(
