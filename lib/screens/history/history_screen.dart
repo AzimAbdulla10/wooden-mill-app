@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:wooden_mill_app/core/theme/shadcn_tokens.dart';
+import 'package:wooden_mill_app/core/utils/export_helper.dart';
 import 'package:wooden_mill_app/core/utils/responsive_layout.dart';
 import 'package:wooden_mill_app/core/utils/volume_calculator.dart';
 import 'package:wooden_mill_app/models/order.dart';
@@ -117,6 +118,16 @@ class _HistoryScreenState extends State<HistoryScreen> {
       appBar: AppBar(
         title: const Text('Order History'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.file_download_outlined),
+            tooltip: 'Export Order History (CSV / PDF)',
+            onPressed: () async {
+              final orders = await _ordersFuture;
+              if (context.mounted) {
+                ExportHelper.showExportOptionsModal(context, orders);
+              }
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.refresh_outlined),
             tooltip: 'Refresh Orders',

@@ -4,7 +4,9 @@ import 'package:wooden_mill_app/core/constants/app_constants.dart';
 import 'package:wooden_mill_app/core/theme/shadcn_tokens.dart';
 import 'package:wooden_mill_app/core/theme/theme_controller.dart';
 import 'package:wooden_mill_app/main.dart';
+import 'package:wooden_mill_app/core/utils/export_helper.dart';
 import 'package:wooden_mill_app/repositories/backup_repository.dart';
+import 'package:wooden_mill_app/repositories/order_repository.dart';
 import 'package:wooden_mill_app/widgets/shad_badge.dart';
 import 'package:wooden_mill_app/widgets/shad_card.dart';
 
@@ -100,6 +102,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
         );
       }
     }
+  }
+
+  void _handleExportFromSettings() async {
+    final repo = OrderRepository();
+    final orders = await repo.getAllOrders();
+    if (!mounted) return;
+    ExportHelper.showExportOptionsModal(context, orders);
   }
 
   void _handleResetSettings() async {
@@ -291,6 +300,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: ShadTokens.spaceMd),
+                    Divider(color: theme.colorScheme.outline.withValues(alpha: 0.5)),
+                    const SizedBox(height: 4),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: _handleExportFromSettings,
+                        icon: const Icon(Icons.file_download_outlined, size: 16),
+                        label: const Text('Export Order History (CSV / PDF)'),
+                      ),
                     ),
                   ],
                 ),
