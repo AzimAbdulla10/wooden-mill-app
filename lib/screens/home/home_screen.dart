@@ -128,6 +128,34 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  void _handleClearOrderConfirmation() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Clear Order Data?'),
+        content: const Text('Are you sure you want to clear all entered customer details and log measurements?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
+            ),
+            child: const Text('Clear Order'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      _controller.clearForm();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -136,12 +164,28 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: const Text('New Order'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.restart_alt_outlined),
-            tooltip: 'Clear Form',
-            onPressed: _controller.clearForm,
+          PopupMenuButton<String>(
+            tooltip: 'Order Options',
+            icon: const Icon(Icons.more_vert),
+            onSelected: (val) {
+              if (val == 'clear') {
+                _handleClearOrderConfirmation();
+              }
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'clear',
+                child: Row(
+                  children: [
+                    Icon(Icons.delete_sweep_outlined, size: 18, color: Theme.of(context).colorScheme.error),
+                    const SizedBox(width: 8),
+                    Text('Clear Order', style: TextStyle(color: Theme.of(context).colorScheme.error, fontSize: 13)),
+                  ],
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 4),
         ],
       ),
       body: ListenableBuilder(
@@ -347,53 +391,99 @@ class _HomeScreenState extends State<HomeScreen> {
     final log = _controller.logs[index];
     final showRemove = _controller.logs.length > AppConstants.minLogs;
 
-    return ShadCard(
-      padding: const EdgeInsets.all(ShadTokens.spaceMd),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(ShadTokens.radiusMd),
+        border: Border.all(
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.35),
+          width: 0.8,
+        ),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              ShadBadge(
-                label: 'Log #${index + 1}',
-                variant: ShadBadgeVariant.defaultVariant,
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHigh,
+                  borderRadius: BorderRadius.circular(ShadTokens.radiusSm),
+                ),
+                child: Text(
+                  'Log #${index + 1}',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
               ),
-              const Spacer(),
+              const SizedBox(width: 8),
+              if (log.volume > 0) ...[
+                Text(
+                  '${VolumeCalculator.formatVolume(log.volume)} cft',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  VolumeCalculator.formatCurrency(log.price),
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ] else
+                const Spacer(),
               if (showRemove)
-                IconButton(
-                  icon: Icon(Icons.close, size: 18, color: theme.colorScheme.onSurfaceVariant),
-                  onPressed: () => _removeLogWithConfirmation(index),
-                  tooltip: 'Remove Log',
-                  constraints: const BoxConstraints(),
-                  padding: EdgeInsets.zero,
-                  splashRadius: 18,
+                InkWell(
+                  onTap: () => _removeLogWithConfirmation(index),
+                  borderRadius: BorderRadius.circular(12),
+                  child: Padding(
+                    padding: const EdgeInsets.all(4.0),
+                    child: Icon(Icons.close, size: 16, color: theme.colorScheme.onSurfaceVariant),
+                  ),
                 ),
             ],
           ),
-          const SizedBox(height: ShadTokens.spaceMd),
+          const SizedBox(height: 6),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
                 child: TextField(
                   controller: log.lengthController,
+                  style: const TextStyle(fontSize: 13),
                   decoration: InputDecoration(
-                    labelText: 'Length (ft) *',
-                    hintText: 'e.g. 10.5',
+                    labelText: 'Length (ft)',
+                    hintText: '10.5',
                     errorText: log.lengthError,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    isDense: true,
                   ),
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*'))],
                 ),
               ),
-              const SizedBox(width: ShadTokens.spaceMd),
+              const SizedBox(width: 8),
               Expanded(
                 child: TextField(
                   controller: log.girthController,
+                  style: const TextStyle(fontSize: 13),
                   decoration: InputDecoration(
-                    labelText: 'Girth (in) *',
-                    hintText: 'e.g. 8.0',
+                    labelText: 'Girth (in)',
+                    hintText: '8.0',
                     errorText: log.girthError,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    isDense: true,
                   ),
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*'))],
@@ -401,46 +491,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ],
           ),
-          if (log.volume > 0) ...[
-            const SizedBox(height: ShadTokens.spaceMd),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                borderRadius: BorderRadius.circular(ShadTokens.radiusSm),
-                border: Border.all(color: theme.colorScheme.outline, width: 1),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Flexible(
-                    child: Text(
-                      'Volume: ${VolumeCalculator.formatVolume(log.volume)} cft',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Flexible(
-                    child: Text(
-                      VolumeCalculator.formatCurrency(log.price),
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.onSurface,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.end,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
         ],
       ),
     );
@@ -513,10 +563,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildStickyPhoneSummaryBar(ThemeData theme) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: ShadTokens.spaceLg, vertical: ShadTokens.spaceMd),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
-        color: theme.cardTheme.color,
-        border: Border(top: BorderSide(color: theme.colorScheme.outline, width: 1)),
+        color: theme.colorScheme.surfaceContainerLow,
+        border: Border(top: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.35), width: 1)),
       ),
       child: Row(
         children: [
@@ -526,30 +576,30 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               Text(
                 '${VolumeCalculator.formatVolume(_controller.totalVolume)} cft',
-                style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant),
+                style: TextStyle(fontSize: 11, color: theme.colorScheme.onSurfaceVariant),
               ),
               Text(
                 VolumeCalculator.formatCurrency(_controller.finalPrice),
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
               ),
             ],
           ),
           const SizedBox(width: 16),
           Expanded(
             child: SizedBox(
-              height: 44,
+              height: 42,
               child: ElevatedButton.icon(
                 onPressed: _controller.isSaving ? null : _submitForm,
                 icon: _controller.isSaving
                     ? const SizedBox(
-                        width: 18,
-                        height: 18,
+                        width: 16,
+                        height: 16,
                         child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                       )
                     : const Icon(Icons.check, size: 18),
                 label: Text(
                   _controller.isSaving ? 'SAVING...' : 'SAVE ORDER',
-                  style: const TextStyle(fontWeight: FontWeight.w600),
+                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
                 ),
               ),
             ),
@@ -561,26 +611,26 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildSubmitBar(ThemeData theme) {
     return Container(
-      padding: const EdgeInsets.all(ShadTokens.spaceLg),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: theme.cardTheme.color,
-        border: Border(top: BorderSide(color: theme.colorScheme.outline, width: 1)),
+        color: theme.colorScheme.surfaceContainerLow,
+        border: Border(top: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.35), width: 1)),
       ),
       child: SizedBox(
         width: double.infinity,
-        height: 48,
+        height: 44,
         child: ElevatedButton.icon(
           onPressed: _controller.isSaving ? null : _submitForm,
           icon: _controller.isSaving
               ? const SizedBox(
-                  width: 18,
-                  height: 18,
+                  width: 16,
+                  height: 16,
                   child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                 )
               : const Icon(Icons.check, size: 18),
           label: Text(
-            _controller.isSaving ? 'SAVING ORDER...' : 'SAVE & CONFIRM ORDER',
-            style: const TextStyle(fontWeight: FontWeight.w600, letterSpacing: 0.5),
+            _controller.isSaving ? 'SAVING ORDER...' : 'SAVE ORDER',
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
           ),
         ),
       ),

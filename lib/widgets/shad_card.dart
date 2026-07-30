@@ -17,20 +17,22 @@ class ShadCard extends StatelessWidget {
     this.action,
     required this.child,
     this.footer,
-    this.padding = const EdgeInsets.all(ShadTokens.spaceLg),
+    this.padding = const EdgeInsets.all(12.0),
     this.backgroundColor,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final borderColor = theme.colorScheme.outline;
+    final borderColor = theme.colorScheme.outlineVariant.withValues(alpha: 0.3);
+
+    final edgePadding = padding is EdgeInsets ? (padding as EdgeInsets) : const EdgeInsets.all(12.0);
 
     return Container(
       decoration: BoxDecoration(
-        color: backgroundColor ?? theme.cardTheme.color,
+        color: backgroundColor ?? theme.colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(ShadTokens.radiusMd),
-        border: Border.all(color: borderColor, width: 1),
+        border: Border.all(color: borderColor, width: 0.8),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -39,13 +41,13 @@ class ShadCard extends StatelessWidget {
           if (title != null || description != null || action != null)
             Padding(
               padding: EdgeInsets.only(
-                left: (padding as EdgeInsets).left,
-                right: (padding as EdgeInsets).right,
-                top: (padding as EdgeInsets).top,
-                bottom: ShadTokens.spaceSm,
+                left: edgePadding.left,
+                right: edgePadding.right,
+                top: edgePadding.top,
+                bottom: 4.0,
               ),
               child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Expanded(
                     child: Column(
@@ -54,10 +56,11 @@ class ShadCard extends StatelessWidget {
                         if (title != null)
                           Text(
                             title!,
-                            style: theme.textTheme.titleMedium?.copyWith(
+                            style: TextStyle(
+                              color: theme.colorScheme.onSurface,
                               fontWeight: FontWeight.w600,
-                              fontSize: 16,
-                              letterSpacing: -0.2,
+                              fontSize: 14,
+                              letterSpacing: -0.1,
                             ),
                           ),
                         if (description != null) ...[
@@ -66,7 +69,7 @@ class ShadCard extends StatelessWidget {
                             description!,
                             style: TextStyle(
                               color: theme.colorScheme.onSurfaceVariant,
-                              fontSize: 13,
+                              fontSize: 12,
                             ),
                           ),
                         ],
@@ -85,8 +88,8 @@ class ShadCard extends StatelessWidget {
             Divider(color: borderColor, height: 1),
             Padding(
               padding: EdgeInsets.symmetric(
-                horizontal: (padding as EdgeInsets).left,
-                vertical: ShadTokens.spaceMd,
+                horizontal: edgePadding.left,
+                vertical: ShadTokens.spaceSm,
               ),
               child: footer!,
             ),

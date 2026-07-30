@@ -7,9 +7,10 @@ class AppTheme {
 
   static ThemeData buildTheme(AppColorTheme colorTheme, {required bool isDark}) {
     final colorScheme = isDark ? colorTheme.darkScheme : colorTheme.lightScheme;
-    final cardColor = isDark ? const Color(0xFF18181B) : const Color(0xFFFFFFFF);
-    final borderColor = isDark ? const Color(0xFF27272A) : const Color(0xFFE4E4E7);
-    final mutedFg = isDark ? const Color(0xFFA1A1AA) : const Color(0xFF71717A);
+    final cardColor = colorScheme.surfaceContainerLow;
+    final borderColor = colorScheme.outlineVariant.withValues(alpha: 0.35);
+    final inputBorderColor = colorScheme.outlineVariant;
+    final mutedFg = colorScheme.onSurfaceVariant;
 
     return ThemeData(
       useMaterial3: true,
@@ -29,7 +30,7 @@ class AppTheme {
         shape: Border(bottom: BorderSide(color: borderColor, width: 1)),
         titleTextStyle: TextStyle(
           color: colorScheme.onSurface,
-          fontSize: 18,
+          fontSize: 17,
           fontWeight: FontWeight.w600,
           letterSpacing: -0.2,
         ),
@@ -40,22 +41,22 @@ class AppTheme {
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(ShadTokens.radiusMd),
-          side: BorderSide(color: borderColor, width: 1),
+          side: BorderSide(color: borderColor, width: 0.8),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: cardColor,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        labelStyle: TextStyle(color: mutedFg, fontSize: 14, fontWeight: FontWeight.w500),
-        hintStyle: TextStyle(color: mutedFg.withValues(alpha: 0.7), fontSize: 14),
+        fillColor: colorScheme.surfaceContainerLowest,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        labelStyle: TextStyle(color: mutedFg, fontSize: 13, fontWeight: FontWeight.w500),
+        hintStyle: TextStyle(color: mutedFg.withValues(alpha: 0.6), fontSize: 13),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(ShadTokens.radiusMd),
-          borderSide: BorderSide(color: borderColor, width: 1),
+          borderSide: BorderSide(color: inputBorderColor, width: 1),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(ShadTokens.radiusMd),
-          borderSide: BorderSide(color: borderColor, width: 1),
+          borderSide: BorderSide(color: inputBorderColor, width: 1),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(ShadTokens.radiusMd),
@@ -75,7 +76,7 @@ class AppTheme {
           elevation: 0,
           backgroundColor: colorScheme.primary,
           foregroundColor: colorScheme.onPrimary,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(ShadTokens.radiusMd),
           ),
@@ -87,41 +88,41 @@ class AppTheme {
           elevation: 0,
           backgroundColor: Colors.transparent,
           foregroundColor: colorScheme.onSurface,
-          side: BorderSide(color: borderColor, width: 1),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          side: BorderSide(color: inputBorderColor, width: 1),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(ShadTokens.radiusMd),
           ),
-          textStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
+          textStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: colorScheme.primary,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(ShadTokens.radiusSm),
           ),
-          textStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
+          textStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
         ),
       ),
       dialogTheme: DialogThemeData(
         elevation: 0,
-        backgroundColor: cardColor,
+        backgroundColor: colorScheme.surfaceContainerHigh,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(ShadTokens.radiusLg),
-          side: BorderSide(color: borderColor, width: 1),
+          side: BorderSide(color: borderColor, width: 0.8),
         ),
       ),
       chipTheme: ChipThemeData(
         elevation: 0,
-        backgroundColor: colorScheme.surface,
+        backgroundColor: colorScheme.surfaceContainerHigh,
         selectedColor: colorScheme.primaryContainer,
         secondarySelectedColor: colorScheme.primaryContainer,
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         labelStyle: TextStyle(fontSize: 12, color: colorScheme.onSurface),
         secondaryLabelStyle: TextStyle(fontSize: 12, color: colorScheme.onPrimaryContainer),
-        side: BorderSide(color: borderColor),
+        side: BorderSide.none,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(ShadTokens.radiusSm),
         ),
@@ -154,7 +155,7 @@ class AppTheme {
       ),
       snackBarTheme: SnackBarThemeData(
         elevation: 0,
-        backgroundColor: isDark ? colorScheme.surfaceContainerHigh : colorScheme.onSurface,
+        backgroundColor: isDark ? colorScheme.surfaceContainerHighest : colorScheme.onSurface,
         contentTextStyle: TextStyle(color: isDark ? colorScheme.onSurface : colorScheme.surface),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(

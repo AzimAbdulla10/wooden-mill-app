@@ -360,9 +360,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       Text(
                         VolumeCalculator.formatCurrency(order.finalPrice),
                         style: TextStyle(
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w600,
                           fontSize: 15,
-                          color: theme.colorScheme.primary,
+                          color: theme.colorScheme.onSurface,
                         ),
                       ),
                     ],
