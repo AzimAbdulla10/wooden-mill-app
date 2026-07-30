@@ -198,72 +198,66 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     const SizedBox(height: ShadTokens.spaceLg),
 
-                    // Color Theme Section with Palette Previews (● ● ●)
+                    // Color Theme Section with Compact Palette Previews (●●●)
                     const Text('Color Theme', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
                     const SizedBox(height: 8),
-                    GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        childAspectRatio: 2.8,
-                        crossAxisSpacing: 10,
-                        mainAxisSpacing: 10,
-                      ),
-                      itemCount: AppColorTheme.values.length,
-                      itemBuilder: (context, index) {
-                        final colorOption = AppColorTheme.values[index];
-                        final isSelected = themeController.colorTheme == colorOption;
-                        final isDark = Theme.of(context).brightness == Brightness.dark;
-                        final previewColors = colorOption.getPreviewColors(isDark);
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: AppColorTheme.values.map((colorOption) {
+                          final isSelected = themeController.colorTheme == colorOption;
+                          final isDark = Theme.of(context).brightness == Brightness.dark;
+                          final previewColors = colorOption.getPreviewColors(isDark);
 
-                        return InkWell(
-                          onTap: () => themeController.setColorTheme(colorOption),
-                          borderRadius: BorderRadius.circular(ShadTokens.radiusMd),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? theme.colorScheme.primaryContainer.withValues(alpha: 0.25)
-                                  : theme.cardTheme.color,
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8.0),
+                            child: InkWell(
+                              onTap: () => themeController.setColorTheme(colorOption),
                               borderRadius: BorderRadius.circular(ShadTokens.radiusMd),
-                              border: Border.all(
-                                color: isSelected ? theme.colorScheme.primary : theme.colorScheme.outline,
-                                width: isSelected ? 1.5 : 1.0,
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Row(
-                                  children: previewColors.map((c) {
-                                    return Container(
-                                      width: 10,
-                                      height: 10,
-                                      margin: const EdgeInsets.only(right: 3),
-                                      decoration: BoxDecoration(
-                                        color: c,
-                                        shape: BoxShape.circle,
-                                      ),
-                                    );
-                                  }).toList(),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    colorOption.displayName,
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                                      color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurface,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? theme.colorScheme.primaryContainer.withValues(alpha: 0.25)
+                                      : theme.cardTheme.color,
+                                  borderRadius: BorderRadius.circular(ShadTokens.radiusMd),
+                                  border: Border.all(
+                                    color: isSelected ? theme.colorScheme.primary : theme.colorScheme.outline,
+                                    width: isSelected ? 1.5 : 1.0,
                                   ),
                                 ),
-                              ],
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Row(
+                                      children: previewColors.map((c) {
+                                        return Container(
+                                          width: 8,
+                                          height: 8,
+                                          margin: const EdgeInsets.only(right: 2),
+                                          decoration: BoxDecoration(
+                                            color: c,
+                                            shape: BoxShape.circle,
+                                          ),
+                                        );
+                                      }).toList(),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      colorOption.displayName,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                        color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurface,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
-                          ),
-                        );
-                      },
+                          );
+                        }).toList(),
+                      ),
                     ),
                     const SizedBox(height: ShadTokens.spaceLg),
 
