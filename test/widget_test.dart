@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wooden_mill_app/core/constants/app_constants.dart';
+import 'package:wooden_mill_app/core/theme/app_color_theme.dart';
 import 'package:wooden_mill_app/core/theme/theme_controller.dart';
 import 'package:wooden_mill_app/core/utils/volume_calculator.dart';
 import 'package:wooden_mill_app/models/order.dart';
@@ -149,13 +150,14 @@ void main() {
   });
 
   group('ThemeController & Settings Tests', () {
-    test('initial themeMode defaults to system and density to recommended', () {
+    test('initial themeMode defaults to system, density to recommended, and colorTheme to timber', () {
       final themeController = ThemeController();
       expect(themeController.themeMode, equals(ThemeMode.system));
       expect(themeController.displayDensity, equals(AppDisplayDensity.recommended));
+      expect(themeController.colorTheme, equals(AppColorTheme.timber));
     });
 
-    test('setThemeMode and setDisplayDensity update state correctly', () async {
+    test('setThemeMode, setDisplayDensity, and setColorTheme update state correctly', () async {
       TestWidgetsFlutterBinding.ensureInitialized();
       final themeController = ThemeController();
 
@@ -167,9 +169,13 @@ void main() {
       expect(themeController.displayDensity, equals(AppDisplayDensity.large));
       expect(themeController.displayDensity.scaleFactor, equals(1.1));
 
+      await themeController.setColorTheme(AppColorTheme.forest);
+      expect(themeController.colorTheme, equals(AppColorTheme.forest));
+
       await themeController.resetSettings();
       expect(themeController.themeMode, equals(ThemeMode.system));
       expect(themeController.displayDensity, equals(AppDisplayDensity.recommended));
+      expect(themeController.colorTheme, equals(AppColorTheme.timber));
     });
   });
 }

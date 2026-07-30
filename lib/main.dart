@@ -21,8 +21,8 @@ class MyApp extends StatelessWidget {
         return MaterialApp.router(
           title: 'Timbr',
           debugShowCheckedModeBanner: false,
-          theme: AppTheme.lightTheme,
-          darkTheme: AppTheme.darkTheme,
+          theme: AppTheme.buildTheme(themeController.colorTheme, isDark: false),
+          darkTheme: AppTheme.buildTheme(themeController.colorTheme, isDark: true),
           themeMode: themeController.themeMode,
           routerConfig: AppRouter.router,
           builder: (context, child) {

@@ -1,51 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:wooden_mill_app/core/theme/app_color_theme.dart';
 import 'package:wooden_mill_app/core/theme/shadcn_tokens.dart';
 
 class AppTheme {
   AppTheme._();
 
-  static ThemeData get lightTheme {
-    final colorScheme = const ColorScheme.light().copyWith(
-      surface: ShadTokens.lightBackground,
-      onSurface: ShadTokens.lightForeground,
-      primary: ShadTokens.lightPrimary,
-      onPrimary: ShadTokens.lightPrimaryForeground,
-      secondary: ShadTokens.lightSecondary,
-      onSecondary: ShadTokens.lightSecondaryForeground,
-      error: ShadTokens.lightDestructive,
-      onError: ShadTokens.lightDestructiveForeground,
-      outline: ShadTokens.lightBorder,
-      outlineVariant: ShadTokens.lightInput,
-      surfaceContainerHighest: ShadTokens.lightMuted,
-      onSurfaceVariant: ShadTokens.lightMutedForeground,
-    );
-
-    return _buildShadTheme(colorScheme, isDark: false);
-  }
-
-  static ThemeData get darkTheme {
-    final colorScheme = const ColorScheme.dark().copyWith(
-      surface: ShadTokens.darkBackground,
-      onSurface: ShadTokens.darkForeground,
-      primary: ShadTokens.darkPrimary,
-      onPrimary: ShadTokens.darkPrimaryForeground,
-      secondary: ShadTokens.darkSecondary,
-      onSecondary: ShadTokens.darkSecondaryForeground,
-      error: ShadTokens.darkDestructive,
-      onError: ShadTokens.darkDestructiveForeground,
-      outline: ShadTokens.darkBorder,
-      outlineVariant: ShadTokens.darkInput,
-      surfaceContainerHighest: ShadTokens.darkMuted,
-      onSurfaceVariant: ShadTokens.darkMutedForeground,
-    );
-
-    return _buildShadTheme(colorScheme, isDark: true);
-  }
-
-  static ThemeData _buildShadTheme(ColorScheme colorScheme, {required bool isDark}) {
-    final cardColor = isDark ? ShadTokens.darkCard : ShadTokens.lightCard;
-    final borderColor = isDark ? ShadTokens.darkBorder : ShadTokens.lightBorder;
-    final mutedFg = isDark ? ShadTokens.darkMutedForeground : ShadTokens.lightMutedForeground;
+  static ThemeData buildTheme(AppColorTheme colorTheme, {required bool isDark}) {
+    final colorScheme = isDark ? colorTheme.darkScheme : colorTheme.lightScheme;
+    final cardColor = isDark ? const Color(0xFF18181B) : const Color(0xFFFFFFFF);
+    final borderColor = isDark ? const Color(0xFF27272A) : const Color(0xFFE4E4E7);
+    final mutedFg = isDark ? const Color(0xFFA1A1AA) : const Color(0xFF71717A);
 
     return ThemeData(
       useMaterial3: true,
@@ -133,7 +97,7 @@ class AppTheme {
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: colorScheme.onSurface,
+          foregroundColor: colorScheme.primary,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(ShadTokens.radiusSm),
@@ -147,6 +111,54 @@ class AppTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(ShadTokens.radiusLg),
           side: BorderSide(color: borderColor, width: 1),
+        ),
+      ),
+      chipTheme: ChipThemeData(
+        elevation: 0,
+        backgroundColor: colorScheme.surface,
+        selectedColor: colorScheme.primaryContainer,
+        secondarySelectedColor: colorScheme.primaryContainer,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        labelStyle: TextStyle(fontSize: 12, color: colorScheme.onSurface),
+        secondaryLabelStyle: TextStyle(fontSize: 12, color: colorScheme.onPrimaryContainer),
+        side: BorderSide(color: borderColor),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(ShadTokens.radiusSm),
+        ),
+      ),
+      navigationBarTheme: NavigationBarThemeData(
+        elevation: 0,
+        backgroundColor: colorScheme.surface,
+        indicatorColor: colorScheme.primaryContainer,
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: colorScheme.primary);
+          }
+          return TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant);
+        }),
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return IconThemeData(color: colorScheme.onPrimaryContainer);
+          }
+          return IconThemeData(color: colorScheme.onSurfaceVariant);
+        }),
+      ),
+      navigationRailTheme: NavigationRailThemeData(
+        elevation: 0,
+        backgroundColor: colorScheme.surface,
+        indicatorColor: colorScheme.primaryContainer,
+        selectedIconTheme: IconThemeData(color: colorScheme.onPrimaryContainer),
+        unselectedIconTheme: IconThemeData(color: colorScheme.onSurfaceVariant),
+        selectedLabelTextStyle: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: colorScheme.primary),
+        unselectedLabelTextStyle: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        elevation: 0,
+        backgroundColor: isDark ? colorScheme.surfaceContainerHigh : colorScheme.onSurface,
+        contentTextStyle: TextStyle(color: isDark ? colorScheme.onSurface : colorScheme.surface),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(ShadTokens.radiusSm),
         ),
       ),
     );
