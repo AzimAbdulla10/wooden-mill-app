@@ -6,6 +6,8 @@ import 'package:wooden_mill_app/models/order.dart';
 import 'package:wooden_mill_app/repositories/draft_repository.dart';
 import 'package:wooden_mill_app/repositories/order_repository.dart';
 
+import 'package:wooden_mill_app/core/controllers/wood_type_controller.dart';
+
 class LogInput {
   final TextEditingController lengthController;
   final TextEditingController girthController;
@@ -33,7 +35,7 @@ class HomeController extends ChangeNotifier {
   final TextEditingController cuttingChargeController = TextEditingController(text: '0');
   final TextEditingController discountController = TextEditingController(text: '0');
 
-  WoodTypeConfig _selectedWoodType = AppConstants.woodTypes.first;
+  WoodTypeConfig _selectedWoodType = WoodTypeController.instance.woodTypes.first;
   final List<LogInput> _logs = [];
 
   // Totals
@@ -60,8 +62,23 @@ class HomeController extends ChangeNotifier {
     cuttingChargeController.addListener(_onChargeOrDiscountChanged);
     discountController.addListener(_onChargeOrDiscountChanged);
 
+    // Listen to global WoodTypeController for live rate changes
+    WoodTypeController.instance.addListener(_onWoodTypesUpdated);
+
     // Restore unfinished draft from disk if present
     _restoreDraft();
+  }
+
+  void _onWoodTypesUpdated() {
+    final available = WoodTypeController.instance.woodTypes;
+    if (available.isEmpty) return;
+
+    final match = available.firstWhere(
+      (w) => w.id == _selectedWoodType.id || w.name == _selectedWoodType.name,
+      orElse: () => available.first,
+    );
+    _selectedWoodType = match;
+    calculateTotals();
   }
 
   // Getters
@@ -196,9 +213,10 @@ class HomeController extends ChangeNotifier {
       discountController.text = draft.discount;
     }
 
-    final wood = AppConstants.woodTypes.firstWhere(
-      (w) => w.name == draft.woodType || w.displayName == draft.woodType,
-      orElse: () => AppConstants.woodTypes.first,
+    final available = WoodTypeController.instance.woodTypes;
+    final wood = available.firstWhere(
+      (w) => w.name == draft.woodType || w.displayName == draft.woodType || w.id == draft.woodType,
+      orElse: () => available.isNotEmpty ? available.first : AppConstants.defaultWoodTypes.first,
     );
     _selectedWoodType = wood;
 
@@ -370,7 +388,10 @@ class HomeController extends ChangeNotifier {
     phoneController.clear();
     cuttingChargeController.text = '0';
     discountController.text = '0';
-    _selectedWoodType = AppConstants.woodTypes.first;
+    final available = WoodTypeController.instance.woodTypes;
+    if (available.isNotEmpty) {
+      _selectedWoodType = available.first;
+    }
     
     for (final log in _logs) {
       log.dispose();
@@ -385,6 +406,7 @@ class HomeController extends ChangeNotifier {
 
   @override
   void dispose() {
+    WoodTypeController.instance.removeListener(_onWoodTypesUpdated);
     customerNameController.dispose();
     phoneController.dispose();
     cuttingChargeController.dispose();

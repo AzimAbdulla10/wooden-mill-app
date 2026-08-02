@@ -6,6 +6,7 @@ import 'package:wooden_mill_app/core/theme/shadcn_tokens.dart';
 import 'package:wooden_mill_app/core/utils/pdf_invoice_helper.dart';
 import 'package:wooden_mill_app/core/utils/responsive_layout.dart';
 import 'package:wooden_mill_app/core/utils/volume_calculator.dart';
+import 'package:wooden_mill_app/core/controllers/wood_type_controller.dart';
 import 'package:wooden_mill_app/models/order.dart';
 import 'package:wooden_mill_app/screens/home/home_controller.dart';
 import 'package:wooden_mill_app/widgets/shad_badge.dart';
@@ -321,35 +322,45 @@ class _HomeScreenState extends State<HomeScreen> {
           border: Border.all(color: theme.colorScheme.outline, width: 1),
           color: theme.cardTheme.color,
         ),
-        child: DropdownButtonHideUnderline(
-          child: DropdownButton<WoodTypeConfig>(
-            value: _controller.selectedWoodType,
-            isExpanded: true,
-            icon: const Icon(Icons.unfold_more, size: 20),
-            items: AppConstants.woodTypes.map((wood) {
-              return DropdownMenuItem<WoodTypeConfig>(
-                value: wood,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      wood.displayName,
-                      style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
+        child: ListenableBuilder(
+          listenable: WoodTypeController.instance,
+          builder: (context, child) {
+            final woodTypes = WoodTypeController.instance.woodTypes;
+            final currentValue = woodTypes.contains(_controller.selectedWoodType)
+                ? _controller.selectedWoodType
+                : (woodTypes.isNotEmpty ? woodTypes.first : _controller.selectedWoodType);
+
+            return DropdownButtonHideUnderline(
+              child: DropdownButton<WoodTypeConfig>(
+                value: currentValue,
+                isExpanded: true,
+                icon: const Icon(Icons.unfold_more, size: 20),
+                items: woodTypes.map((wood) {
+                  return DropdownMenuItem<WoodTypeConfig>(
+                    value: wood,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          wood.displayName,
+                          style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
+                        ),
+                        ShadBadge(
+                          label: '${VolumeCalculator.formatCurrency(wood.ratePerCft)} / cft',
+                          variant: ShadBadgeVariant.outline,
+                        ),
+                      ],
                     ),
-                    ShadBadge(
-                      label: '${VolumeCalculator.formatCurrency(wood.ratePerCft)} / cft',
-                      variant: ShadBadgeVariant.outline,
-                    ),
-                  ],
-                ),
-              );
-            }).toList(),
-            onChanged: (val) {
-              if (val != null) {
-                _controller.selectedWoodType = val;
-              }
-            },
-          ),
+                  );
+                }).toList(),
+                onChanged: (val) {
+                  if (val != null) {
+                    _controller.selectedWoodType = val;
+                  }
+                },
+              ),
+            );
+          },
         ),
       ),
     );

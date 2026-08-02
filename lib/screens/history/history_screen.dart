@@ -8,6 +8,7 @@ import 'package:wooden_mill_app/core/utils/volume_calculator.dart';
 import 'package:wooden_mill_app/models/order.dart';
 import 'package:wooden_mill_app/repositories/order_repository.dart';
 import 'package:wooden_mill_app/screens/details/details_screen.dart';
+import 'package:wooden_mill_app/core/controllers/wood_type_controller.dart';
 import 'package:wooden_mill_app/widgets/shad_badge.dart';
 import 'package:wooden_mill_app/widgets/shad_card.dart';
 
@@ -292,23 +293,45 @@ class _HistoryScreenState extends State<HistoryScreen> {
           const SizedBox(width: 8),
 
           // Wood Species Filter Chips
-          ...['All', 'Teak', 'Coconut', 'Others'].map((wood) {
-            final isSelected = _selectedWoodFilter == wood;
-            return Padding(
-              padding: const EdgeInsets.only(right: 6.0),
-              child: FilterChip(
-                selected: isSelected,
-                label: Text(wood, style: TextStyle(fontSize: 12, color: isSelected ? theme.colorScheme.primary : null)),
-                onSelected: (selected) {
-                  setState(() {
-                    _selectedWoodFilter = wood;
-                  });
-                },
-                selectedColor: theme.colorScheme.primaryContainer.withValues(alpha: 0.4),
-                side: BorderSide(color: isSelected ? theme.colorScheme.primary : theme.colorScheme.outline.withValues(alpha: 0.6)),
-              ),
-            );
-          }),
+          ListenableBuilder(
+            listenable: WoodTypeController.instance,
+            builder: (context, child) {
+              final speciesList = [
+                'All',
+                ...WoodTypeController.instance.woodTypes.map((w) => w.name),
+              ];
+
+              return Row(
+                children: speciesList.map((wood) {
+                  final isSelected = _selectedWoodFilter.toLowerCase() == wood.toLowerCase();
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 6.0),
+                    child: FilterChip(
+                      selected: isSelected,
+                      label: Text(
+                        wood,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isSelected ? theme.colorScheme.primary : null,
+                        ),
+                      ),
+                      onSelected: (selected) {
+                        setState(() {
+                          _selectedWoodFilter = wood;
+                        });
+                      },
+                      selectedColor: theme.colorScheme.primaryContainer.withValues(alpha: 0.4),
+                      side: BorderSide(
+                        color: isSelected
+                            ? theme.colorScheme.primary
+                            : theme.colorScheme.outline.withValues(alpha: 0.6),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              );
+            },
+          ),
         ],
       ),
     );

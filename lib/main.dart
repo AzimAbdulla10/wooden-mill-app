@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:wooden_mill_app/core/controllers/wood_type_controller.dart';
 import 'package:wooden_mill_app/core/router/app_router.dart';
 import 'package:wooden_mill_app/core/theme/app_theme.dart';
 import 'package:wooden_mill_app/core/theme/theme_controller.dart';
 
 final ThemeController themeController = ThemeController();
+final WoodTypeController woodTypeController = WoodTypeController();
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await woodTypeController.loadWoodTypes();
   runApp(const MyApp());
 }
 

@@ -8,6 +8,7 @@ import 'package:wooden_mill_app/main.dart';
 import 'package:wooden_mill_app/core/utils/export_helper.dart';
 import 'package:wooden_mill_app/repositories/backup_repository.dart';
 import 'package:wooden_mill_app/repositories/order_repository.dart';
+import 'package:wooden_mill_app/core/controllers/wood_type_controller.dart';
 import 'package:wooden_mill_app/widgets/shad_badge.dart';
 import 'package:wooden_mill_app/widgets/shad_card.dart';
 
@@ -296,26 +297,96 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               const SizedBox(height: ShadTokens.spaceLg),
 
-              // Wood Rates Section
-              ShadCard(
-                title: 'Wood Species Unit Rates',
-                child: Column(
-                  children: AppConstants.woodTypes.map((wood) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 6.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(wood.displayName, style: const TextStyle(fontWeight: FontWeight.w500)),
-                          ShadBadge(
-                            label: '₹${wood.ratePerCft.toStringAsFixed(0)} / cft',
-                            variant: ShadBadgeVariant.secondary,
-                          ),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-                ),
+              // Wood Rates & Species Management Section
+              ListenableBuilder(
+                listenable: WoodTypeController.instance,
+                builder: (context, child) {
+                  final woodTypes = WoodTypeController.instance.woodTypes;
+
+                  return ShadCard(
+                    title: 'Wood Pricing & Species Configuration',
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Configure unit rates (₹/cft) and manage available timber species across the application.',
+                          style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant),
+                        ),
+                        const SizedBox(height: ShadTokens.spaceMd),
+
+                        // Wood Species List
+                        ...woodTypes.map((wood) {
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 8.0),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(ShadTokens.radiusMd),
+                              border: Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.5)),
+                              color: theme.colorScheme.surface,
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        wood.displayName,
+                                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                                      ),
+                                      Text(
+                                        wood.isDefault ? 'Standard System Species' : 'Custom Species',
+                                        style: TextStyle(fontSize: 11, color: theme.colorScheme.onSurfaceVariant),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                ShadBadge(
+                                  label: '₹${wood.ratePerCft.toStringAsFixed(0)} / cft',
+                                  variant: ShadBadgeVariant.secondary,
+                                ),
+                                const SizedBox(width: 8),
+                                IconButton(
+                                  icon: const Icon(Icons.edit_outlined, size: 18),
+                                  tooltip: 'Edit Rate / Details',
+                                  onPressed: () => _handleEditRateWithConfirm(context, wood),
+                                ),
+                                if (!wood.isDefault)
+                                  IconButton(
+                                    icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 18),
+                                    tooltip: 'Delete Species',
+                                    onPressed: () => _handleDeleteWoodTypeWithConfirm(context, wood),
+                                  ),
+                              ],
+                            ),
+                          );
+                        }),
+
+                        const SizedBox(height: ShadTokens.spaceMd),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            ElevatedButton.icon(
+                              onPressed: () => _handleAddWoodTypeWithConfirm(context),
+                              icon: const Icon(Icons.add, size: 16),
+                              label: const Text('Add Wood Species'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: theme.colorScheme.primary,
+                                foregroundColor: theme.colorScheme.onPrimary,
+                              ),
+                            ),
+                            TextButton.icon(
+                              onPressed: () => _handleResetDefaultsWithConfirm(context),
+                              icon: const Icon(Icons.restart_alt, size: 16),
+                              label: const Text('Reset Rates to Defaults'),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: ShadTokens.spaceLg),
 
@@ -413,6 +484,337 @@ class _SettingsScreenState extends State<SettingsScreen> {
         },
       ),
     );
+  }
+
+  /// Pre-Action Confirmation Dialog
+  Future<bool> _showConfirmBeforeDialog({
+    required BuildContext context,
+    required String title,
+    required String message,
+    String confirmLabel = 'Proceed',
+  }) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(ShadTokens.radiusLg),
+          side: BorderSide(color: Theme.of(context).colorScheme.outline),
+        ),
+        title: Row(
+          children: [
+            const Icon(Icons.help_outline_rounded, color: Colors.orangeAccent, size: 22),
+            const SizedBox(width: 8),
+            Expanded(child: Text(title, style: const TextStyle(fontSize: 16))),
+          ],
+        ),
+        content: Text(message, style: const TextStyle(fontSize: 13)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Theme.of(context).colorScheme.onPrimary,
+            ),
+            child: Text(confirmLabel),
+          ),
+        ],
+      ),
+    );
+    return result ?? false;
+  }
+
+  /// Post-Action Confirmation & Summary Dialog
+  Future<void> _showSuccessAfterDialog({
+    required BuildContext context,
+    required String title,
+    required String message,
+  }) async {
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(ShadTokens.radiusLg),
+          side: BorderSide(color: Theme.of(context).colorScheme.outline),
+        ),
+        title: const Row(
+          children: [
+            Icon(Icons.check_circle_outline, color: Color(0xFF059669), size: 22),
+            SizedBox(width: 8),
+            Text('Action Complete'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            ),
+            const SizedBox(height: 6),
+            Text(message, style: const TextStyle(fontSize: 13)),
+          ],
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF059669),
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 1. Edit Wood Rate with Pre & Post Confirmation
+  void _handleEditRateWithConfirm(BuildContext context, WoodTypeConfig wood) async {
+    final confirmBefore = await _showConfirmBeforeDialog(
+      context: context,
+      title: 'Edit Rate for ${wood.name}?',
+      message: 'You are about to modify the rate per CFT for ${wood.name}. This will update volume calculation prices for all new orders.',
+      confirmLabel: 'Proceed to Edit',
+    );
+
+    if (!confirmBefore) return;
+    if (!context.mounted) return;
+
+    final rateController = TextEditingController(text: wood.ratePerCft.toStringAsFixed(0));
+    final nameController = TextEditingController(text: wood.name);
+    final malayalamController = TextEditingController(text: wood.malayalamName);
+    final formKey = GlobalKey<FormState>();
+
+    final double? newRate = await showDialog<double>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(ShadTokens.radiusLg),
+            side: BorderSide(color: Theme.of(context).colorScheme.outline),
+          ),
+          title: Text('Edit ${wood.name} Details'),
+          content: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: nameController,
+                  enabled: !wood.isDefault,
+                  decoration: const InputDecoration(labelText: 'Species Name'),
+                  validator: (val) => (val == null || val.trim().isEmpty) ? 'Required' : null,
+                ),
+                const SizedBox(height: 10),
+                TextFormField(
+                  controller: malayalamController,
+                  enabled: !wood.isDefault,
+                  decoration: const InputDecoration(labelText: 'Malayalam Name'),
+                ),
+                const SizedBox(height: 10),
+                TextFormField(
+                  controller: rateController,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(
+                    labelText: 'Rate per CFT (₹)',
+                  ),
+                  validator: (val) {
+                    final num = double.tryParse(val ?? '');
+                    if (num == null || num <= 0) return 'Enter a valid rate > 0';
+                    return null;
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(null),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (formKey.currentState?.validate() == true) {
+                  final parsedRate = double.parse(rateController.text.trim());
+                  Navigator.of(context).pop(parsedRate);
+                }
+              },
+              child: const Text('Save Changes'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (newRate == null) return;
+
+    final updated = wood.copyWith(
+      name: nameController.text.trim(),
+      malayalamName: malayalamController.text.trim(),
+      ratePerCft: newRate,
+    );
+
+    await WoodTypeController.instance.updateWoodType(updated);
+
+    if (context.mounted) {
+      await _showSuccessAfterDialog(
+        context: context,
+        title: 'Wood Rate Updated',
+        message: 'The rate for ${updated.name} has been successfully updated to ₹${newRate.toStringAsFixed(0)} / cft.',
+      );
+    }
+  }
+
+  /// 2. Add Wood Species with Pre & Post Confirmation
+  void _handleAddWoodTypeWithConfirm(BuildContext context) async {
+    final confirmBefore = await _showConfirmBeforeDialog(
+      context: context,
+      title: 'Add New Wood Species?',
+      message: 'You are about to add a new timber species option. It will immediately become available in the calculator dropdown and order history filters.',
+      confirmLabel: 'Proceed to Add',
+    );
+
+    if (!confirmBefore) return;
+    if (!context.mounted) return;
+
+    final nameController = TextEditingController();
+    final malayalamController = TextEditingController();
+    final rateController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    final isSaved = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(ShadTokens.radiusLg),
+            side: BorderSide(color: Theme.of(context).colorScheme.outline),
+          ),
+          title: const Text('Add New Wood Species'),
+          content: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Wood Name (English)',
+                    hintText: 'e.g. Rosewood, Mahogany',
+                  ),
+                  validator: (val) => (val == null || val.trim().isEmpty) ? 'Required' : null,
+                ),
+                const SizedBox(height: 10),
+                TextFormField(
+                  controller: malayalamController,
+                  decoration: const InputDecoration(
+                    labelText: 'Malayalam Name (Optional)',
+                    hintText: 'e.g. ഈട്ടി, മഹാഗണി',
+                  ),
+                ),
+                const SizedBox(height: 10),
+                TextFormField(
+                  controller: rateController,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(
+                    labelText: 'Rate per CFT (₹)',
+                    hintText: 'e.g. 5500',
+                  ),
+                  validator: (val) {
+                    final num = double.tryParse(val ?? '');
+                    if (num == null || num <= 0) return 'Enter a valid rate > 0';
+                    return null;
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (formKey.currentState?.validate() == true) {
+                  Navigator.of(context).pop(true);
+                }
+              },
+              child: const Text('Add Species'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (isSaved != true) return;
+
+    final name = nameController.text.trim();
+    final rate = double.parse(rateController.text.trim());
+    final malayalam = malayalamController.text.trim();
+
+    await WoodTypeController.instance.addWoodType(
+      name: name,
+      malayalamName: malayalam,
+      ratePerCft: rate,
+    );
+
+    if (context.mounted) {
+      await _showSuccessAfterDialog(
+        context: context,
+        title: 'New Wood Species Added',
+        message: 'Successfully added "$name" with a unit rate of ₹${rate.toStringAsFixed(0)} / cft.',
+      );
+    }
+  }
+
+  /// 3. Delete Wood Species with Pre & Post Confirmation
+  void _handleDeleteWoodTypeWithConfirm(BuildContext context, WoodTypeConfig wood) async {
+    final confirmBefore = await _showConfirmBeforeDialog(
+      context: context,
+      title: 'Delete ${wood.name}?',
+      message: 'Are you sure you want to remove ${wood.name} from available timber species? Existing order records will remain intact.',
+      confirmLabel: 'Confirm Delete',
+    );
+
+    if (!confirmBefore) return;
+
+    await WoodTypeController.instance.deleteWoodType(wood.id);
+
+    if (context.mounted) {
+      await _showSuccessAfterDialog(
+        context: context,
+        title: 'Species Removed',
+        message: '${wood.name} has been successfully removed from available wood options.',
+      );
+    }
+  }
+
+  /// 4. Reset Defaults with Pre & Post Confirmation
+  void _handleResetDefaultsWithConfirm(BuildContext context) async {
+    final confirmBefore = await _showConfirmBeforeDialog(
+      context: context,
+      title: 'Reset Wood Rates to Defaults?',
+      message: 'This will reset Teak, Coconut, and Others back to system rates (₹4800, ₹4500, ₹4000) and remove custom added species.',
+      confirmLabel: 'Reset Defaults',
+    );
+
+    if (!confirmBefore) return;
+
+    await WoodTypeController.instance.resetToDefaults();
+
+    if (context.mounted) {
+      await _showSuccessAfterDialog(
+        context: context,
+        title: 'Rates Reset Complete',
+        message: 'All wood species and unit rates have been restored to factory defaults.',
+      );
+    }
   }
 
   Widget _buildInfoRow(String label, String value, ThemeData theme) {

@@ -18,24 +18,33 @@ class AppConstants {
   static const String othersMalayalam = 'മറ്റുള്ളവ';
   static const double othersRate = 4000.0;
 
-  // Wood Type configuration list
-  static const List<WoodTypeConfig> woodTypes = [
+  // Wood Type configuration default list
+  static const List<WoodTypeConfig> defaultWoodTypes = [
     WoodTypeConfig(
+      id: 'teak',
       name: teakName,
       malayalamName: teakMalayalam,
       ratePerCft: teakRate,
+      isDefault: true,
     ),
     WoodTypeConfig(
+      id: 'coconut',
       name: coconutName,
       malayalamName: coconutMalayalam,
       ratePerCft: coconutRate,
+      isDefault: true,
     ),
     WoodTypeConfig(
+      id: 'others',
       name: othersName,
       malayalamName: othersMalayalam,
       ratePerCft: othersRate,
+      isDefault: true,
     ),
   ];
+
+  // Backward compatibility getter
+  static List<WoodTypeConfig> get woodTypes => defaultWoodTypes;
 
   // Validation Limits
   static const int minLogs = 1;
@@ -43,15 +52,59 @@ class AppConstants {
 }
 
 class WoodTypeConfig {
+  final String id;
   final String name;
   final String malayalamName;
   final double ratePerCft;
+  final bool isDefault;
 
   const WoodTypeConfig({
+    required this.id,
     required this.name,
     required this.malayalamName,
     required this.ratePerCft,
+    this.isDefault = false,
   });
 
-  String get displayName => '$name ($malayalamName)';
+  String get displayName => malayalamName.isNotEmpty ? '$name ($malayalamName)' : name;
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'malayalamName': malayalamName,
+        'ratePerCft': ratePerCft,
+        'isDefault': isDefault,
+      };
+
+  factory WoodTypeConfig.fromJson(Map<String, dynamic> json) => WoodTypeConfig(
+        id: json['id'] as String? ?? json['name'] as String,
+        name: json['name'] as String,
+        malayalamName: json['malayalamName'] as String? ?? '',
+        ratePerCft: (json['ratePerCft'] as num).toDouble(),
+        isDefault: json['isDefault'] as bool? ?? false,
+      );
+
+  WoodTypeConfig copyWith({
+    String? id,
+    String? name,
+    String? malayalamName,
+    double? ratePerCft,
+    bool? isDefault,
+  }) {
+    return WoodTypeConfig(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      malayalamName: malayalamName ?? this.malayalamName,
+      ratePerCft: ratePerCft ?? this.ratePerCft,
+      isDefault: isDefault ?? this.isDefault,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WoodTypeConfig && runtimeType == other.runtimeType && id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
 }
